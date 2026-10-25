@@ -1,0 +1,90 @@
+# Arsitektur: VibePlan
+
+> Menjelaskan *bagaimana* VibePlan disusun. Versi library ada di [TECH_STACK.md](TECH_STACK.md).
+
+## 1. Gambaran Sistem
+```
+Browser
+  └─ React SPA (Vite)
+       ├─ screens/      Start → Interview → Review → Result
+       ├─ engine/       resolve (showIf, autoAi, rekomendasi) + answers (ubah state)
+       ├─ data/         bank pertanyaan, katalog fitur & entitas, tabel stack
+       ├─ generator/    ProjectState → Plan → 8+ file .md + validasi
+       ├─ export/       JSZip (lazy) → unduhan
+       └─ storage/      localStorage "vibeplan:v1"
+```
+Tidak ada server, API, atau database. Tidak ada permintaan jaringan setelah halaman dimuat.
+
+## 2. Komponen
+| Komponen | Tanggung jawab | File |
+|---|---|---|
+| Bank pertanyaan | Data pertanyaan, opsi, `showIf`, `autoAi`, `recommend` | `src/data/questions.ts` |
+| Katalog | Fitur per jenis aplikasi (+ AC EARS) dan entitas (+ field) | `src/data/features.ts`, `src/data/entities.ts` |
+| Tabel stack | Versi mayor, perintah, warna, gaya | `src/data/stacks.ts` |
+| Resolver | Menghitung jawaban final per pertanyaan, termasuk rekomendasi | `src/engine/resolve.ts` |
+| Pengubah jawaban | Fungsi murni untuk memilih opsi, Lainnya, AI, prioritas | `src/engine/answers.ts` |
+| Plan | Model tengah: fitur ber-ID, entitas, stack, asumsi | `src/engine/plan.ts` |
+| Generator | Satu fungsi per file hasil + validasi | `src/generator/*.ts` |
+| UI | Layar & kartu pertanyaan | `src/screens/`, `src/components/` |
+
+## 3. Struktur Folder
+```
+src/
+  data/          # konten: pertanyaan, katalog, stack (tanpa React)
+  engine/        # logika murni: types, resolve, answers, plan
+  generator/     # Plan → markdown; satu file per dokumen
+  export/        # ZIP & unduhan
+  storage/       # localStorage + parseState
+  components/    # komponen UI kecil
+  screens/       # satu komponen per layar
+  test/          # fixture tes
+  App.tsx, main.tsx, index.css
+templates/       # struktur acuan file hasil (dicek oleh tes)
+docs/research/   # riset & bank pertanyaan versi dokumen
+docs/vibeplan/   # spesifikasi VibePlan sendiri
+```
+**Aturan dependensi:** `screens/components → engine/generator/export/storage → data`. `data/` hanya boleh mengimpor tipe dari `engine/types.ts`. `engine/` dan `generator/` tidak boleh mengimpor React atau API browser (selain `export/` dan `storage/`).
+
+## 4. Alur Data Utama
+1. Setiap aksi pengguna memanggil fungsi murni di `engine/answers.ts` yang mengembalikan `ProjectState` baru (immutable).
+2. `App` menyimpan state ke `localStorage` setiap kali berubah.
+3. Saat render, `accessor(state)` membuat pembaca jawaban yang di-cache per objek state. `resolved(id)`:
+   - `showIf` false → `hidden` (jawaban diabaikan);
+   - `autoAi` true, jawaban "AI", atau tidak dijawab → hasil `recommend()` (bertanda `[ASUMSI]`);
+   - selain itu → opsi pengguna, setelah opsi yang tidak lagi valid dibuang.
+4. `recommend()` dan `showIf()` hanya boleh membaca pertanyaan yang muncul **lebih awal** di `QUESTIONS`; siklus dilempar sebagai error.
+5. `generateAll(state, date)` → `buildPlan()` (fitur diurut Must→Won't lalu diberi ID F-01…) → generator per file → `validate()`.
+6. `buildZip()` memuat JSZip secara lazy dan membungkus semua file dalam folder `<slug>/`.
+
+## 5. Autentikasi & Otorisasi
+- Mekanisme sesi: tidak ada
+- Pemeriksaan izin: tidak ada
+- Multi-tenant: tidak ada
+
+## 6. Integrasi Eksternal
+Tidak ada. Menambah integrasi (misal LLM di v1) butuh baris ADR baru.
+
+## 7. Rendering, Real-time, Offline
+- Strategi rendering: SPA di klien; `index.html` memuat judul dan meta description
+- Real-time: tidak ada
+- Offline: setelah dimuat, semua alur berjalan tanpa jaringan
+
+## 8. Keamanan
+- Tidak ada `dangerouslySetInnerHTML`; pratinjau markdown ditampilkan sebagai teks di `<pre>`.
+- File impor divalidasi `parseState()` sebelum dipakai; data tidak valid ditolak tanpa mengubah state.
+- Tidak ada rahasia di repo.
+
+## 9. Lingkungan & Deploy
+| Lingkungan | URL | Branch | Database |
+|---|---|---|---|
+| Lokal | localhost:5173 | - | localStorage |
+| Produksi | belum dipilih (PRD Q-02) | main | localStorage |
+
+## 10. Catatan Keputusan Arsitektur (ADR)
+| ID | Tanggal | Keputusan | Alasan | Alternatif yang ditolak |
+|---|---|---|---|---|
+| ADR-001 | 2026-10-25 | SPA statis React + Vite, tanpa backend | MVP tanpa LLM tidak butuh server; hosting gratis | Next.js (fitur server tidak dipakai) |
+| ADR-002 | 2026-10-25 | Generator berupa fungsi TypeScript, bukan substitusi `{{placeholder}}` | Banyak bagian template berupa daftar/tabel berulang dan logika kondisional | Mengisi `templates/*.md` dengan string replace (meninggalkan placeholder) |
+| ADR-003 | 2026-10-25 | `templates/*.md` tetap acuan struktur; tes memastikan semua heading `##` ada di hasil | Satu sumber kebenaran untuk struktur dokumen | Menyalin template ke kode |
+| ADR-004 | 2026-10-25 | Rekomendasi dihitung ulang dari jawaban terbaru, tidak disimpan | Mencegah rekomendasi basi saat jawaban awal diubah | Menyimpan hasil rekomendasi di state |
+| ADR-005 | 2026-10-25 | Relasi entitas diambil dari katalog (FK di field), bukan pertanyaan DAT-02 | DAT-02 butuh usulan pasangan entitas oleh LLM | Matriks relasi manual |
