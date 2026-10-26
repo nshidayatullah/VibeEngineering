@@ -1,7 +1,14 @@
-// vibeplan-ai: service kecil di belakang nginx yang memanggil 9router untuk klarifikasi awal.
+// vibeplan-ai: service kecil di belakang nginx yang memanggil 9router (klarifikasi awal & saran per tahap).
 // Jalankan: node server/main.ts (Node ≥ 22.18, tanpa dependensi npm). Konfigurasi lewat env.
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { handleClarify, type ModelConfig, RateLimiter } from "./clarify.ts";
+import {
+  type FetchFn,
+  type HandlerResult,
+  handleClarify,
+  type ModelConfig,
+  RateLimiter,
+} from "./clarify.ts";
+import { handleSuggest } from "./suggest.ts";
 
 const env = (name: string, fallback?: string): string => {
   const v = process.env[name] ?? fallback;
@@ -21,10 +28,16 @@ const cfg: ModelConfig = {
 const host = env("VIBEPLAN_AI_HOST", "127.0.0.1");
 const port = Number(env("VIBEPLAN_AI_PORT", "8787"));
 const limiter = new RateLimiter(
-  Number(env("VIBEPLAN_AI_RATE_MINUTE", "5")),
-  Number(env("VIBEPLAN_AI_RATE_DAY", "50")),
+  Number(env("VIBEPLAN_AI_RATE_MINUTE", "10")),
+  Number(env("VIBEPLAN_AI_RATE_DAY", "150")),
 );
-const MAX_BODY = 8 * 1024;
+const MAX_BODY = 32 * 1024;
+
+type Handler = (raw: unknown, cfg: ModelConfig, fetchFn: FetchFn) => Promise<HandlerResult>;
+const ROUTES: Record<string, Handler> = {
+  "/api/ai/clarify": handleClarify,
+  "/api/ai/suggest": handleSuggest,
+};
 
 const send = (res: ServerResponse, status: number, body: Record<string, unknown>) => {
   res.writeHead(status, {
@@ -51,7 +64,8 @@ const readBody = (req: IncomingMessage): Promise<string | null> =>
 
 const server = createServer(async (req, res) => {
   const started = Date.now();
-  const path = (req.url ?? "").split("?")[0];
+  const path = (req.url ?? "").split("?")[0] ?? "";
+  const handler = req.method === "POST" ? ROUTES[path] : undefined;
   // Service hanya mendengar 127.0.0.1, jadi X-Real-IP selalu diisi nginx.
   const ip = String(req.headers["x-real-ip"] ?? req.socket.remoteAddress ?? "-");
   let status = 404;
@@ -59,7 +73,7 @@ const server = createServer(async (req, res) => {
     if (req.method === "GET" && path === "/api/ai/health") {
       status = 200;
       send(res, status, { ok: true });
-    } else if (req.method === "POST" && path === "/api/ai/clarify") {
+    } else if (handler) {
       if (!String(req.headers["content-type"] ?? "").startsWith("application/json")) {
         status = 415;
         send(res, status, { error: "bad_request" });
@@ -74,7 +88,7 @@ const server = createServer(async (req, res) => {
         } catch {
           raw = undefined;
         }
-        const result = await handleClarify(raw, cfg, fetch);
+        const result = await handler(raw, cfg, fetch);
         status = result.status;
         send(res, status, result.body);
       }
