@@ -175,6 +175,13 @@ Rancangan: [AI-9ROUTER.md](AI-9ROUTER.md), ARCHITECTURE ADR-007, PRD F-11.
   - [x] Alasan saran diminta satu kalimat lengkap 10–25 kata yang merujuk ide/klarifikasi
   - [x] Timeout bawaan 55 s; coba ulang dilewati jika percobaan pertama > setengah timeout (tes)
 
+### T-023 · Saran AI yang konsisten
+- Status: [x]
+- Bergantung pada: T-022
+- Selesai jika:
+  - [x] Saran AI dari tahap sebelumnya ikut dikirim sebagai konteks bertanda `(saran AI)` (tes)
+  - [x] Prompt meminta saran konsisten satu sama lain dan dengan konteks
+
 ## Log Pekerjaan
 | Tanggal | Tugas | Catatan |
 |---|---|---|
@@ -186,3 +193,5 @@ Rancangan: [AI-9ROUTER.md](AI-9ROUTER.md), ARCHITECTURE ADR-007, PRD F-11.
 | 2026-10-26 | T-020 | Saran AI per tahap: endpoint `/api/ai/suggest`, tombol per tahap, saran tersimpan sebagai `[ASUMSI]` bersumber model. |
 | 2026-10-26 | T-021 | Saran AI live: suggest 3–5 detik, tahap 1 terisi 6/6, tahap 3 6/7, tanpa error CSP. Temuan: klarifikasi 33 detik dan berbahasa Inggris, alasan terlalu pendek. |
 | 2026-10-26 | T-022 | Prompt Bahasa Indonesia lebih tegas + deteksi jawaban Inggris, alasan satu kalimat, timeout 55 s dengan batas coba ulang. |
+| 2026-10-26 | T-022 (produksi) | Klarifikasi kini Bahasa Indonesia natural, alasan 9/9 kalimat lengkap, clarify 4,5–5,8 s, suggest 2,5–8 s. Catatan: VIS-03 MVP vs VIS-04 demo saling bertentangan. |
+| 2026-10-26 | T-023 | Konsistensi saran: saran AI tahap sebelumnya ikut jadi konteks, prompt meminta keputusan konsisten. |

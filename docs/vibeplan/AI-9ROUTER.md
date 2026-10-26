@@ -56,7 +56,7 @@ Pengamanan di service (`server/clarify.ts`):
 
 ## 5. Saran AI per tahap (F-12, ADR-008)
 Di atas pertanyaan setiap tahap ada tombol **Isi dengan saran AI** (`src/components/AiSuggest.tsx`).
-1. `buildSuggestPayload` (`src/engine/suggest.ts`) mengambil pertanyaan single/multi yang tampil dan belum dijawab pengguna (maks 15), opsi yang berlaku saat itu, lalu konteks: jawaban klarifikasi + jawaban pengguna di tahap sebelumnya.
+1. `buildSuggestPayload` (`src/engine/suggest.ts`) mengambil pertanyaan single/multi yang tampil dan belum dijawab pengguna (maks 15), opsi yang berlaku saat itu, lalu konteks: jawaban klarifikasi + jawaban pengguna dan saran AI (ditandai `(saran AI)`) di tahap sebelumnya. Prompt meminta model menimbang semua pertanyaan bersama agar sarannya tidak saling bertentangan.
 2. Server (`server/suggest.ts`) menyusun prompt, memanggil 9router, dan membuang ID pertanyaan/opsi yang tidak dikirim.
 3. `applySuggestions` menyimpan hasilnya sebagai `{ decidedBy: "ai", source: "model", optionIds, reason }`. Jawaban pengguna tidak ditimpa; opsi `none` dibuang bila digabung opsi lain.
 4. Resolver memakai saran model selama opsinya masih valid; jika tidak (misal VIS-01 berubah sehingga katalog fitur berganti), kembali ke `recommend()` statis. Semua tetap bertanda `[ASUMSI]`.
