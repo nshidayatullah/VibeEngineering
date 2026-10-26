@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
+import { checkAi, MIN_IDEA } from "./ai/client";
 import { STAGES } from "./data/questions";
 import { emptyState } from "./engine/resolve";
 import type { ProjectState } from "./engine/types";
+import { ClarifyScreen } from "./screens/ClarifyScreen";
 import { InterviewScreen } from "./screens/InterviewScreen";
 import { ResultScreen } from "./screens/ResultScreen";
 import { ReviewScreen } from "./screens/ReviewScreen";
 import { StartScreen } from "./screens/StartScreen";
 import { clearState, loadState, saveState } from "./storage/persist";
 
-type Screen = "start" | "interview" | "review" | "result";
+type Screen = "start" | "clarify" | "interview" | "review" | "result";
 
 const today = (): string => {
   const d = new Date();
@@ -21,7 +23,16 @@ export function App() {
   const [screen, setScreen] = useState<Screen>("start");
   const [stageIndex, setStageIndex] = useState(0);
 
+  // null = belum dicek; false = service vibeplan-ai tidak ada (misal dev lokal), fitur AI disembunyikan.
+  const [aiAvailable, setAiAvailable] = useState<boolean | null>(null);
+  const [useAi, setUseAi] = useState(true);
+
   useEffect(() => saveState(state), [state]);
+  useEffect(() => {
+    void checkAi().then(setAiAvailable);
+  }, []);
+
+  const aiOn = aiAvailable === true && useAi;
 
   const hasProgress = Object.keys(state.answers).length > 0;
   const go = (s: Screen) => {
@@ -58,11 +69,28 @@ export function App() {
             state={state}
             hasProgress={hasProgress}
             onChange={setState}
-            onStart={() => go("interview")}
+            aiAvailable={aiAvailable === true}
+            useAi={useAi}
+            onUseAi={setUseAi}
+            onStart={() =>
+              go(
+                aiOn && state.clarifications.length === 0 && state.idea.trim().length >= MIN_IDEA
+                  ? "clarify"
+                  : "interview",
+              )
+            }
             onReset={() => {
               setState(clearState());
               setStageIndex(0);
             }}
+          />
+        )}
+        {screen === "clarify" && (
+          <ClarifyScreen
+            state={state}
+            onChange={setState}
+            onBack={() => go("start")}
+            onDone={() => go("interview")}
           />
         )}
         {screen === "interview" && (
@@ -82,6 +110,7 @@ export function App() {
               setStageIndex(i);
               go("interview");
             }}
+            onEditClarifications={aiAvailable === true ? () => go("clarify") : undefined}
             onGenerate={() => go("result")}
           />
         )}
@@ -91,7 +120,9 @@ export function App() {
       </main>
 
       <footer className="mx-auto max-w-6xl px-4 pb-8 text-xs text-muted">
-        Jawaban hanya disimpan di browser ini. Tidak ada data yang dikirim ke server.
+        {aiOn
+          ? "Jawaban disimpan di browser ini. Nama dan ide proyek dikirim ke server VibePlan dan penyedia AI hanya saat klarifikasi, dan tidak disimpan di server."
+          : "Jawaban hanya disimpan di browser ini. Tidak ada data yang dikirim ke server."}
       </footer>
     </div>
   );

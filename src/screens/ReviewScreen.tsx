@@ -1,5 +1,6 @@
 import { Badge, Button, Card } from "../components/ui";
 import { QUESTIONS, STAGES, selectedFeatureOptions } from "../data/questions";
+import { clarificationLabels } from "../engine/clarify";
 import { accessor, answerLabels } from "../engine/resolve";
 import type { ProjectState } from "../engine/types";
 import { PRIORITY_LABEL } from "../generator/md";
@@ -7,10 +8,12 @@ import { PRIORITY_LABEL } from "../generator/md";
 interface Props {
   state: ProjectState;
   onEditStage: (index: number) => void;
+  /** Tidak ada jika AI tidak tersedia. */
+  onEditClarifications?: () => void;
   onGenerate: () => void;
 }
 
-export function ReviewScreen({ state, onEditStage, onGenerate }: Props) {
+export function ReviewScreen({ state, onEditStage, onEditClarifications, onGenerate }: Props) {
   const a = accessor(state);
   const rows = QUESTIONS.map((q) => ({ q, r: a.resolved(q.id) })).filter(({ r }) => !r.hidden);
   const aiCount = rows.filter(({ r }) => r.decidedBy === "ai").length;
@@ -28,6 +31,34 @@ export function ReviewScreen({ state, onEditStage, onGenerate }: Props) {
           Buat paket .md →
         </Button>
       </header>
+
+      {state.clarifications.length > 0 && (
+        <Card>
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="font-semibold">Klarifikasi dari AI</h3>
+            {onEditClarifications && (
+              <Button variant="ghost" onClick={onEditClarifications}>
+                Ubah
+              </Button>
+            )}
+          </div>
+          <dl className="divide-y divide-line">
+            {state.clarifications.map((c) => (
+              <div key={c.id} className="grid gap-1 py-2 text-sm sm:grid-cols-[1fr_1.2fr] sm:gap-4">
+                <dt className="text-muted">
+                  <span className="mr-1 font-mono text-xs">{c.id}</span>
+                  {c.text}
+                </dt>
+                <dd>
+                  {clarificationLabels(c).join(", ") || (
+                    <span className="text-muted">dilewati</span>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </Card>
+      )}
 
       {STAGES.map((s, i) => {
         const stageRows = rows.filter(({ q }) => q.stage === s.id);

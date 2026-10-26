@@ -19,4 +19,13 @@ pnpm build
 sudo mkdir -p "$TARGET"
 sudo rsync -a --delete dist/ "$TARGET/"
 
+# Service klarifikasi AI (opsional): hanya diperbarui jika unit systemd sudah dipasang (DEPLOY.md §7).
+AI_DIR="${VIBEPLAN_AI_DIR:-/opt/vibeplan-ai}"
+if [ -f /etc/systemd/system/vibeplan-ai.service ]; then
+  sudo mkdir -p "$AI_DIR"
+  sudo rsync -a --delete --exclude '*.test.ts' server/ "$AI_DIR/"
+  sudo systemctl restart vibeplan-ai
+  echo "vibeplan-ai diperbarui di $AI_DIR"
+fi
+
 echo "Deploy selesai: $(git rev-parse --short HEAD) → $TARGET"

@@ -116,8 +116,35 @@
   - [ ] Satu orang awam menyelesaikan wawancara ≤ 15 menit (PRD §2)
   - [ ] Paket hasilnya dipakai Claude Code untuk T-001 tanpa pertanyaan yang seharusnya sudah dijawab paket
 
+## Fase 4 · v1: Klarifikasi AI (9router)
+Rancangan: [AI-9ROUTER.md](AI-9ROUTER.md), ARCHITECTURE ADR-007, PRD F-11.
+
+### T-016 · Service `vibeplan-ai`
+- Status: [x]
+- Bergantung pada: -
+- Selesai jika:
+  - [x] `server/main.ts` melayani `GET /api/ai/health` dan `POST /api/ai/clarify`, tanpa dependensi npm
+  - [x] Validasi masukan, prompt di server, validasi jawaban model + 1x coba ulang, rate limit, timeout (tes `server/clarify.test.ts`)
+
+### T-017 · Layar klarifikasi & PRD hasil (F-11)
+- Status: [x]
+- Bergantung pada: T-016
+- Selesai jika:
+  - [x] AC-11-1 s/d AC-11-6 (tes `src/engine/clarify.test.ts`, `src/generator/generator.test.ts`, uji browser 375px & 1280px)
+  - [x] `ProjectState` version 2; data version 1 dinaikkan oleh `parseState` (tes `persist.test.ts`)
+
+### T-018 · Deploy service AI
+- Status: [ ]
+- Bergantung pada: T-017
+- Rujukan: DEPLOY.md §7
+- Selesai jika:
+  - [ ] `vibeplan-ai` berjalan di VPS (systemd), `/etc/vibeplan-ai.env` terisi, blok `location /api/ai/` aktif di nginx
+  - [ ] `curl https://vibeplan.emha.web.id/api/ai/health` → `{"ok":true}`
+  - [ ] Klarifikasi dicoba di produksi dengan satu ide nyata; tidak ada error CSP di Console
+
 ## Log Pekerjaan
 | Tanggal | Tugas | Catatan |
 |---|---|---|
 | 2026-10-25 | T-001 s/d T-013 | MVP pertama: wizard statis, generator, ZIP, CI. 97 tes lulus. |
 | 2026-10-26 | T-014 | Produksi live di https://vibeplan.emha.web.id (nginx di VPS, sertifikat Let's Encrypt s/d 2027-01-23, auto-renew). Cek §5: `/` dan rute lain 200 dengan CSP, HTTP 301 ke HTTPS, aset immutable. Alur penuh sampai ZIP (10 file, 0 placeholder) dan reload localStorage lulus tanpa error console/CSP. Catatan: Node di VPS 26, bukan 22 sesuai `.nvmrc`. |
+| 2026-10-26 | T-016, T-017 | Klarifikasi awal AI lewat 9router: service `vibeplan-ai`, layar klarifikasi, state version 2. 116 tes lulus. |

@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { setClarifications } from "../engine/clarify";
 import { allAi, answer, base, DATE } from "../test/fixtures";
 import { generateAll } from ".";
 
@@ -174,5 +175,46 @@ describe("isi spesifik", () => {
       (x) => x.path === "vibeplan-answers.json",
     );
     expect(JSON.parse(f?.content ?? "{}").answers["DES-04"].otherText).toBe("#0F766E");
+  });
+});
+
+describe("klarifikasi AI di PRD", () => {
+  const withClarifications = setClarifications(
+    base("Servis AC", "Pemesanan servis AC di Bandung."),
+    [
+      {
+        id: "K-01",
+        text: "Siapa yang menetapkan harga?",
+        type: "single",
+        options: [
+          { id: "K-01-a", label: "Teknisi" },
+          { id: "K-01-b", label: "Admin" },
+        ],
+        optionIds: ["K-01-b"],
+      },
+      {
+        id: "K-02",
+        text: "Ada garansi?",
+        type: "single",
+        options: [
+          { id: "K-02-a", label: "Ya" },
+          { id: "K-02-b", label: "Tidak" },
+        ],
+        optionIds: [],
+      },
+    ],
+  );
+  const prd = (s: typeof withClarifications) =>
+    generateAll(s, DATE).files.find((f) => f.path === "docs/PRD.md")?.content ?? "";
+
+  it("menulis jawaban klarifikasi dan melewatkan yang tidak dijawab", () => {
+    const content = prd(withClarifications);
+    expect(content).toContain("### Klarifikasi awal");
+    expect(content).toContain("| Siapa yang menetapkan harga? | Admin |");
+    expect(content).not.toContain("Ada garansi?");
+  });
+
+  it("tidak menambah bagian jika tidak ada klarifikasi", () => {
+    expect(prd(base("Servis AC"))).not.toContain("Klarifikasi awal");
   });
 });

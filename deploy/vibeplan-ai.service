@@ -1,0 +1,28 @@
+# Service klarifikasi AI VibePlan: meneruskan permintaan dari nginx (/api/ai/) ke 9router.
+# Pasang: sudo cp deploy/vibeplan-ai.service /etc/systemd/system/
+#         sudo systemctl daemon-reload && sudo systemctl enable --now vibeplan-ai
+# Ganti /usr/bin/node jika `command -v node` menunjuk ke path lain (butuh Node ≥ 22.18).
+[Unit]
+Description=VibePlan AI (klarifikasi lewat 9router)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+EnvironmentFile=/etc/vibeplan-ai.env
+ExecStart=/usr/bin/node /opt/vibeplan-ai/main.ts
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target

@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { MIN_IDEA } from "../ai/client";
 import { Button, Card } from "../components/ui";
 import type { ProjectState } from "../engine/types";
 import { parseState } from "../storage/persist";
@@ -6,12 +7,25 @@ import { parseState } from "../storage/persist";
 interface Props {
   state: ProjectState;
   hasProgress: boolean;
+  aiAvailable: boolean;
+  useAi: boolean;
+  onUseAi: (on: boolean) => void;
   onChange: (next: ProjectState) => void;
   onStart: () => void;
   onReset: () => void;
 }
 
-export function StartScreen({ state, hasProgress, onChange, onStart, onReset }: Props) {
+export function StartScreen({
+  state,
+  hasProgress,
+  aiAvailable,
+  useAi,
+  onUseAi,
+  onChange,
+  onStart,
+  onReset,
+}: Props) {
+  const ideaTooShort = state.idea.trim().length < MIN_IDEA;
   const fileRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState("");
 
@@ -69,6 +83,31 @@ export function StartScreen({ state, hasProgress, onChange, onStart, onReset }: 
             rekomendasi.
           </p>
         </div>
+        {aiAvailable && (
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-line p-3 text-sm">
+            <input
+              type="checkbox"
+              checked={useAi}
+              onChange={(e) => onUseAi(e.target.checked)}
+              className="mt-0.5 accent-[var(--color-primary)]"
+            />
+            <span>
+              <span className="block font-medium">
+                🤖 Klarifikasi ide dengan AI sebelum wawancara
+              </span>
+              <span className="block text-xs text-muted">
+                AI mengajukan 3–5 pertanyaan pilihan ganda khusus untuk proyek Anda. Nama dan ide
+                dikirim ke server VibePlan dan penyedia AI, tidak disimpan.
+                {useAi &&
+                  ideaTooShort &&
+                  ` Tulis ide minimal ${MIN_IDEA} karakter untuk memakainya.`}
+                {useAi &&
+                  state.clarifications.length > 0 &&
+                  " Klarifikasi sudah ada; ubah dari layar Ringkasan."}
+              </span>
+            </span>
+          </label>
+        )}
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" disabled={state.projectName.trim() === ""} onClick={onStart}>
             {hasProgress ? "Lanjutkan wawancara" : "Mulai wawancara"}
@@ -102,8 +141,10 @@ export function StartScreen({ state, hasProgress, onChange, onStart, onReset }: 
 
       <ul className="grid gap-3 text-sm text-muted sm:grid-cols-3">
         <li className="rounded-lg border border-line p-3">
-          <strong className="block text-fg">Tanpa server</strong>Semua jawaban tersimpan di browser
-          ini saja.
+          <strong className="block text-fg">Tanpa akun</strong>
+          {aiAvailable
+            ? "Jawaban tersimpan di browser ini; hanya klarifikasi AI yang dikirim ke server."
+            : "Semua jawaban tersimpan di browser ini saja."}
         </li>
         <li className="rounded-lg border border-line p-3">
           <strong className="block text-fg">Ragu? Serahkan ke AI</strong>Setiap pertanyaan punya

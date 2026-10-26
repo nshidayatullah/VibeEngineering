@@ -1,3 +1,4 @@
+import { clarificationLabels } from "../engine/clarify";
 import { ASSUMPTION, type Plan } from "../engine/plan";
 import { bullets, doc, numbered, PRIORITY_LABEL, table } from "./md";
 
@@ -117,6 +118,7 @@ export function generatePrd(p: Plan): string {
       `**Tujuan tahap ini:** ${label("VIS-03")}`,
       `**Target rilis:** ${label("VIS-05")}`,
     ]),
+    ...clarificationSection(p),
     "## 2. Masalah & Tujuan",
     `**Masalah yang diselesaikan:** ${p.idea || `${ASSUMPTION} lihat ringkasan; pertajam bersama pengguna.`}`,
     "**Metrik sukses**",
@@ -213,6 +215,19 @@ export function generatePrd(p: Plan): string {
       ),
     ),
   );
+}
+
+/** Jawaban klarifikasi awal dari AI; pertanyaan yang dilewati tidak ditulis. */
+function clarificationSection(p: Plan): string[] {
+  const rows = p.a.state.clarifications
+    .map((c) => [c.text, clarificationLabels(c).join(", ")])
+    .filter(([, answer]) => answer !== "");
+  if (rows.length === 0) return [];
+  return [
+    "### Klarifikasi awal",
+    "Jawaban pengguna atas pertanyaan klarifikasi yang disusun AI dari ide proyek. Perlakukan sebagai kebutuhan.",
+    table(["Pertanyaan", "Jawaban"], rows),
+  ];
 }
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
