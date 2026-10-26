@@ -21,7 +21,7 @@ const cfg: ModelConfig = {
   apiKey: process.env.VIBEPLAN_AI_KEY ?? "",
   model: env("VIBEPLAN_AI_MODEL"),
   maxTokens: Number(env("VIBEPLAN_AI_MAX_TOKENS", "1200")),
-  timeoutMs: Number(env("VIBEPLAN_AI_TIMEOUT_MS", "40000")),
+  timeoutMs: Number(env("VIBEPLAN_AI_TIMEOUT_MS", "55000")),
   temperature: Number(env("VIBEPLAN_AI_TEMPERATURE", "0.2")),
   jsonMode: process.env.VIBEPLAN_AI_JSON_MODE === "1",
 };

@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  askModel,
   buildMessages,
   type FetchFn,
   handleClarify,
+  looksEnglish,
   type ModelConfig,
   parseClarifyRequest,
   parseModelQuestions,
@@ -108,6 +110,29 @@ describe("JSON berisik dari model", () => {
   });
 });
 
+describe("bahasa jawaban model", () => {
+  it("mengenali teks Inggris tanpa salah menandai teks Indonesia berisi istilah teknis", () => {
+    expect(looksEnglish("Who is the target customer? What do you want to sell to them?")).toBe(
+      true,
+    );
+    expect(
+      looksEnglish("Siapa yang menentukan harga servis? Admin atau teknisi lewat dashboard"),
+    ).toBe(false);
+  });
+
+  it("menolak pertanyaan berbahasa Inggris agar dicoba ulang", () => {
+    const en = [
+      q("Who is the target customer for this app?", ["Homeowner", "Rental manager"]),
+      q("How do you want to handle the payment?", ["Cash", "Transfer"]),
+      q("What is the main problem that you solve?", ["Slow booking", "No reviews"]),
+    ];
+    expect(parseModelQuestions(JSON.stringify({ questions: en }))).toEqual({
+      ok: false,
+      error: "bad_model",
+    });
+  });
+});
+
 describe("RateLimiter", () => {
   it("membatasi per menit dan per hari, per IP", () => {
     let t = 0;
@@ -175,6 +200,24 @@ describe("handleClarify", () => {
     });
     expect(n).toBe(2);
     expect(r.status).toBe(200);
+  });
+
+  it("tidak mencoba ulang jika percobaan pertama sudah memakan lebih dari setengah timeout", async () => {
+    let t = 0;
+    let calls = 0;
+    const r = await askModel(
+      cfg,
+      [],
+      async () => {
+        calls += 1;
+        t += 600;
+        return new Response(JSON.stringify({ choices: [{ message: { content: "x" } }] }));
+      },
+      () => ({ ok: false, error: "bad_model" }),
+      () => t,
+    );
+    expect(calls).toBe(1);
+    expect(r).toEqual({ ok: false, error: "bad_model" });
   });
 
   it("mengembalikan 502 jika 9router error dan 504 jika timeout", async () => {
