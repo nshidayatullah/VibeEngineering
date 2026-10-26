@@ -100,14 +100,14 @@
   - [x] GitHub Actions menjalankan lint, typecheck, test, build pada setiap PR
 
 ### T-014 · Deploy
-- Status: [~]
+- Status: [x]
 - Bergantung pada: T-013
 - Rujukan: DEPLOY.md, `deploy/`
 - Selesai jika:
   - [x] Hosting dipilih (PRD Q-02): VPS sendiri + nginx
   - [x] Konfigurasi nginx dan `deploy/deploy.sh` ada di repo dan diuji lokal (200 untuk `/` dan rute lain, aset immutable, CSP tanpa error di browser, ZIP terunduh)
-  - [ ] `dist/` terdeploy di https://vibeplan.emha.web.id dengan HTTPS
-  - [ ] Alur utama diuji manual di URL produksi (DEPLOY.md §5)
+  - [x] `dist/` terdeploy di https://vibeplan.emha.web.id dengan HTTPS
+  - [x] Alur utama diuji manual di URL produksi (DEPLOY.md §5)
 
 ### T-015 · Uji dengan pengguna nyata
 - Status: [ ]
@@ -146,4 +146,5 @@ Rancangan: [AI-9ROUTER.md](AI-9ROUTER.md), ARCHITECTURE ADR-007, PRD F-11.
 | Tanggal | Tugas | Catatan |
 |---|---|---|
 | 2026-10-25 | T-001 s/d T-013 | MVP pertama: wizard statis, generator, ZIP, CI. 97 tes lulus. |
+| 2026-10-26 | T-014 | Produksi live di https://vibeplan.emha.web.id (nginx di VPS, sertifikat Let's Encrypt s/d 2027-01-23, auto-renew). Cek §5: `/` dan rute lain 200 dengan CSP, HTTP 301 ke HTTPS, aset immutable. Alur penuh sampai ZIP (10 file, 0 placeholder) dan reload localStorage lulus tanpa error console/CSP. Catatan: Node di VPS 26, bukan 22 sesuai `.nvmrc`. |
 | 2026-10-26 | T-016, T-017 | Klarifikasi awal AI lewat 9router: service `vibeplan-ai`, layar klarifikasi, state version 2. 116 tes lulus. |
