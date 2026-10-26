@@ -78,7 +78,7 @@ Tidak ada. Menambah integrasi (misal LLM di v1) butuh baris ADR baru.
 | Lingkungan | URL | Branch | Database |
 |---|---|---|---|
 | Lokal | localhost:5173 | - | localStorage |
-| Produksi | belum dipilih (PRD Q-02) | main | localStorage |
+| Produksi | https://vibeplan.emha.web.id (nginx di VPS, lihat [DEPLOY.md](DEPLOY.md)) | main | localStorage |
 
 ## 10. Catatan Keputusan Arsitektur (ADR)
 | ID | Tanggal | Keputusan | Alasan | Alternatif yang ditolak |
@@ -88,3 +88,4 @@ Tidak ada. Menambah integrasi (misal LLM di v1) butuh baris ADR baru.
 | ADR-003 | 2026-10-25 | `templates/*.md` tetap acuan struktur; tes memastikan semua heading `##` ada di hasil | Satu sumber kebenaran untuk struktur dokumen | Menyalin template ke kode |
 | ADR-004 | 2026-10-25 | Rekomendasi dihitung ulang dari jawaban terbaru, tidak disimpan | Mencegah rekomendasi basi saat jawaban awal diubah | Menyimpan hasil rekomendasi di state |
 | ADR-005 | 2026-10-25 | Relasi entitas diambil dari katalog (FK di field), bukan pertanyaan DAT-02 | DAT-02 butuh usulan pasangan entitas oleh LLM | Matriks relasi manual |
+| ADR-006 | 2026-10-26 | Produksi di VPS sendiri: nginx melayani `dist/` statis dengan CSP ketat, tanpa proses Node | VPS sudah ada dan memakai nginx; situs statis tidak butuh proses yang berjalan | Next.js/Node + systemd di port sendiri (butuh server), Vercel/Netlify/GitHub Pages (pengguna memilih VPS) |

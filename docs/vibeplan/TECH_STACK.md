@@ -19,7 +19,7 @@
 | Validasi | Fungsi sendiri (`parseState`) | - | Satu bentuk data kecil; Zod tidak sebanding ukurannya |
 | Testing | Vitest | 5.0.5 | Unit test engine & generator di Node |
 | Lint/format | Biome | 2.6.3 | Satu alat untuk lint + format + urut import |
-| Hosting | Statis (GitHub Pages / Vercel / Netlify) | - | `base: "./"` sehingga bisa di subfolder |
+| Hosting | VPS sendiri + nginx (situs statis) | - | `dist/` disalin ke `/var/www/vibeplan`; lihat [DEPLOY.md](DEPLOY.md). `base: "./"` tetap dipakai |
 | Monitoring | Tidak ada | - | Tanpa server |
 
 ## 2. Library yang Disetujui
@@ -56,6 +56,7 @@ pnpm dev        # http://localhost:5173
 | Tes | `pnpm test` |
 | Build | `pnpm build` (hasil di `dist/`) |
 | Pratinjau build | `pnpm preview` |
+| Deploy ke VPS | `./deploy/deploy.sh` (di VPS, dari root repo) |
 | Migrasi DB | Tidak ada |
 
 ## 6. Variabel Lingkungan

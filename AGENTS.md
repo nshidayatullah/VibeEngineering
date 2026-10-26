@@ -11,6 +11,7 @@ Dokumen rujukan (baca sesuai kebutuhan, jangan menebak):
 - `docs/vibeplan/TECH_STACK.md`: versi, library disetujui/dilarang, perintah
 - `docs/vibeplan/DESIGN.md`: token, komponen, layar
 - `docs/vibeplan/TASKS.md`: tugas yang sedang dikerjakan
+- `docs/vibeplan/DEPLOY.md`: cara rilis ke produksi (VPS + nginx)
 - `docs/research/`: riset konsep dan bank pertanyaan asli
 - `templates/`: struktur acuan file hasil
 
