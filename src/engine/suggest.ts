@@ -39,7 +39,7 @@ export function suggestableQuestions(state: ProjectState, stage: StageId) {
 }
 
 /**
- * Menyusun data untuk /api/ai/suggest: klarifikasi + jawaban pengguna di tahap sebelumnya sebagai
+ * Menyusun data untuk /api/ai/suggest: klarifikasi + jawaban pengguna dan saran AI di tahap sebelumnya sebagai
  * konteks, lalu pertanyaan tahap ini beserta opsi yang sedang berlaku (sudah difilter showIf/katalog).
  */
 export function buildSuggestPayload(state: ProjectState, stage: StageId): SuggestPayload {
@@ -50,10 +50,18 @@ export function buildSuggestPayload(state: ProjectState, stage: StageId): Sugges
   const clarifications = state.clarifications
     .map((c) => ({ q: c.text, a: clarificationLabels(c).join(", ") }))
     .filter((c) => c.a !== "");
+  // Saran AI yang sudah ada di tahap sebelumnya ikut dikirim (ditandai) agar saran baru konsisten.
   const previous = QUESTIONS.filter(
-    (q) => earlier.has(q.stage) && q.type !== "priority" && answeredByUser(state, q.id),
+    (q) =>
+      earlier.has(q.stage) &&
+      q.type !== "priority" &&
+      (answeredByUser(state, q.id) || state.answers[q.id]?.source === "model"),
   )
-    .map((q) => ({ q: q.text, a: answerLabels(a, q.id).join(", ") }))
+    .map((q) => {
+      const labels = answerLabels(a, q.id).join(", ");
+      const fromModel = state.answers[q.id]?.source === "model";
+      return { q: q.text, a: labels && fromModel ? `${labels} (saran AI)` : labels };
+    })
     .filter((c) => c.a !== "");
 
   return {

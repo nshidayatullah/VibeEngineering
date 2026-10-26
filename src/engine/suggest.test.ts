@@ -39,6 +39,19 @@ describe("buildSuggestPayload", () => {
   });
 });
 
+describe("konteks saran AI sebelumnya", () => {
+  it("mengirim saran AI dari tahap sebelumnya dengan penanda", () => {
+    const s = applySuggestions(base("Servis AC", IDEA), [
+      { id: "VIS-01", optionIds: ["booking"], reason: "-" },
+    ]);
+    const p = buildSuggestPayload(s, "pengguna");
+    expect(p.context).toContainEqual({
+      q: "Jenis aplikasi apa yang paling mendekati ide Anda?",
+      a: "Booking / reservasi (saran AI)",
+    });
+  });
+});
+
 describe("applySuggestions", () => {
   it("menyimpan saran sebagai rekomendasi model yang dipakai resolver", () => {
     const s = applySuggestions(base("Servis AC", IDEA), [
