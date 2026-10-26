@@ -92,15 +92,14 @@ export function StartScreen({
               className="mt-0.5 accent-[var(--color-primary)]"
             />
             <span>
-              <span className="block font-medium">
-                🤖 Klarifikasi ide dengan AI sebelum wawancara
-              </span>
+              <span className="block font-medium">🤖 Bantu wawancara dengan AI</span>
               <span className="block text-xs text-muted">
-                AI mengajukan 3–5 pertanyaan pilihan ganda khusus untuk proyek Anda. Nama dan ide
-                dikirim ke server VibePlan dan penyedia AI, tidak disimpan.
+                AI mengajukan 3–5 pertanyaan klarifikasi khusus proyek Anda, lalu bisa mengisi saran
+                jawaban di setiap tahap. Nama, ide, dan jawaban dikirim ke server VibePlan dan
+                penyedia AI saat dibutuhkan, tidak disimpan.
                 {useAi &&
                   ideaTooShort &&
-                  ` Tulis ide minimal ${MIN_IDEA} karakter untuk memakainya.`}
+                  ` Tulis ide minimal ${MIN_IDEA} karakter agar AI bisa mengajukan klarifikasi.`}
                 {useAi &&
                   state.clarifications.length > 0 &&
                   " Klarifikasi sudah ada; ubah dari layar Ringkasan."}

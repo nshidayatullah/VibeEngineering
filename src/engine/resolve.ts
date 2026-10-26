@@ -4,7 +4,7 @@ import type { Accessor, Option, Priority, ProjectState, Question, ResolvedAnswer
 export const OTHER = "other";
 
 export const emptyState = (): ProjectState => ({
-  version: 2,
+  version: 3,
   projectName: "",
   idea: "",
   answers: {},
@@ -83,9 +83,22 @@ function resolveQuestion(a: Accessor, id: string): ResolvedAnswer {
       reason: rec.reason,
       auto,
       skipped,
+      source: "rules",
     };
   };
 
+  // Saran model hanya dipakai selama opsinya masih valid; jika tidak, kembali ke aturan statis.
+  if (!auto && raw?.decidedBy === "ai" && raw.source === "model" && q.type !== "priority") {
+    const ids = raw.optionIds.filter((o) => valid.has(o));
+    if (ids.length > 0)
+      return {
+        ...base,
+        decidedBy: "ai",
+        optionIds: q.type === "single" ? ids.slice(0, 1) : ids,
+        reason: raw.reason,
+        source: "model",
+      };
+  }
   if (auto || raw?.decidedBy === "ai") return fromAi(false);
   if (!raw) return fromAi(true);
 

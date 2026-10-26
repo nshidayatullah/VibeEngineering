@@ -65,6 +65,10 @@ export interface Answer {
   /** Diisi jika pengguna memilih "Lainnya". */
   otherText?: string;
   priorities?: Record<string, Priority>;
+  /** "model" = saran dari AI (9router) lewat /api/ai/suggest; hanya bersama decidedBy "ai". */
+  source?: "model";
+  /** Alasan saran AI. */
+  reason?: string;
 }
 
 /** Pertanyaan klarifikasi awal dari AI (9router) beserta jawabannya. */
@@ -79,7 +83,7 @@ export interface Clarification {
 }
 
 export interface ProjectState {
-  version: 2;
+  version: 3;
   projectName: string;
   idea: string;
   answers: Record<string, Answer>;
@@ -103,6 +107,8 @@ export interface ResolvedAnswer {
   auto: boolean;
   /** Pertanyaan tampil tetapi tidak dijawab. */
   skipped: boolean;
+  /** Asal rekomendasi bila decidedBy "ai": aturan statis atau saran model. */
+  source?: "rules" | "model";
 }
 
 export interface GeneratedFile {

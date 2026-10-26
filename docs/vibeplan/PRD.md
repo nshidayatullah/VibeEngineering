@@ -51,10 +51,12 @@ Satu peran saja (pengguna anonim). Tidak ada login dan akun. Data hanya dikirim 
 | F-09 | Impor jawaban | Should | Memuat `vibeplan-answers.json` dari ZIP sebelumnya untuk melanjutkan/merevisi |
 | F-10 | File khusus agen | Should | Sesuai AIW-01: `CLAUDE.md`, `.cursor/rules/project.mdc`, `.github/copilot-instructions.md`, `GEMINI.md`, `.kiro/steering/project.md`, `.windsurf/rules/project.md` |
 | F-11 | Klarifikasi awal dengan AI | Should | Sebelum wawancara, AI (lewat 9router) membaca nama & ide lalu mengajukan 3–5 pertanyaan pilihan ganda khusus proyek; jawaban masuk PRD hasil. Lihat [AI-9ROUTER.md](AI-9ROUTER.md) |
+| F-12 | Saran AI per tahap | Should | Tombol **Isi dengan saran AI** di tiap tahap: AI memilih opsi untuk pertanyaan yang belum dijawab berdasarkan ide, klarifikasi, dan jawaban sebelumnya; hasilnya bertanda `[ASUMSI]` dengan alasan |
 
 ### Alur utama
 1. Pengguna membuka VibePlan, mengisi nama proyek dan ide (F-01).
 1a. Jika AI tersedia dan dipilih, pengguna menjawab 3–5 pertanyaan klarifikasi dari AI (F-11).
+2a. Di setiap tahap, pengguna boleh meminta saran AI untuk pertanyaan yang belum dijawab (F-12).
 2. Pengguna menjawab 8 tahap; pertanyaan yang tidak relevan disembunyikan (F-02, F-03).
 3. Pengguna meninjau keputusan dan memperbaiki yang perlu (F-04).
 4. Pengguna menekan **Buat paket**, melihat pratinjau, lalu mengunduh ZIP (F-05, F-06, F-08).
@@ -140,6 +142,17 @@ Satu peran saja (pengguna anonim). Tidak ada login dan akun. Data hanya dikirim 
 
 **Kasus tepi:** ide diubah setelah klarifikasi; pengguna memakai **Minta pertanyaan lain** dari layar klarifikasi (lewat **Ubah** di Ringkasan).
 
+#### F-12 · Saran AI per tahap
+**User story:** Sebagai pembuat, saya ingin AI mengisi pilihan yang cocok dengan proyek saya agar tidak menebak sendiri pertanyaan yang tidak saya pahami.
+
+**Kriteria penerimaan (EARS)**
+- AC-12-1: KETIKA AI aktif, SISTEM HARUS menampilkan tombol **Isi dengan saran AI** di setiap tahap yang punya pertanyaan single/multi yang belum dijawab pengguna.
+- AC-12-2: KETIKA tombol ditekan, SISTEM HARUS mengirim ke `POST /api/ai/suggest` nama, ide, jawaban klarifikasi, jawaban pengguna di tahap sebelumnya, dan pertanyaan tahap ini beserta opsinya.
+- AC-12-3: SISTEM HARUS menyimpan saran sebagai jawaban `decidedBy: "ai", source: "model"` beserta alasan, dan TIDAK BOLEH menimpa jawaban pengguna.
+- AC-12-4: Saran AI HARUS ditandai `[ASUMSI]` di file hasil dan tampil sebagai **🤖 Saran AI** di kartu pertanyaan dan **saran AI** di Ringkasan.
+- AC-12-5: JIKA opsi saran tidak lagi valid (misal jenis aplikasi berubah), MAKA SISTEM HARUS kembali ke rekomendasi aturan statis.
+- AC-12-6: Server HARUS membuang opsi dan pertanyaan yang tidak ada di permintaan.
+
 ## 5. Kebutuhan Non-fungsional
 | Aspek | Kebutuhan terukur |
 |---|---|
@@ -153,7 +166,7 @@ Satu peran saja (pengguna anonim). Tidak ada login dan akun. Data hanya dikirim 
 | Bahasa | Antarmuka & file hasil dalam Bahasa Indonesia |
 
 ## 6. Di Luar Lingkup (TIDAK dikerjakan)
-- LLM selain klarifikasi awal (F-11): pertanyaan lanjutan per tahap, narasi AI, rekomendasi per pertanyaan berbasis model
+- LLM selain klarifikasi awal (F-11) dan saran per tahap (F-12): pertanyaan lanjutan per tahap, narasi AI, kriteria penerimaan buatan AI, prioritas MoSCoW oleh AI
 - Pertanyaan kriteria penerimaan interaktif per fitur (Setuju/Ubah/Hapus) (fase v1)
 - DAT-02 matriks relasi interaktif; relasi diambil dari katalog entitas
 - Login, akun, database, sinkronisasi antar perangkat; backend selain service `vibeplan-ai` (ADR-007)

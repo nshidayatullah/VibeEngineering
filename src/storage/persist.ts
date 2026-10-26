@@ -10,18 +10,21 @@ const isAnswer = (v: unknown): v is Answer => {
   return (
     (o.decidedBy === "user" || o.decidedBy === "ai") &&
     Array.isArray(o.optionIds) &&
-    o.optionIds.every((x) => typeof x === "string")
+    o.optionIds.every((x) => typeof x === "string") &&
+    (o.source === undefined || o.source === "model") &&
+    (o.reason === undefined || typeof o.reason === "string")
   );
 };
 
 /**
  * Memvalidasi data dari localStorage atau file impor. Mengembalikan null jika tidak valid.
- * Version 1 (sebelum klarifikasi AI) dinaikkan ke version 2 dengan `clarifications` kosong.
+ * Data lama dinaikkan ke version 3: version 1 mendapat `clarifications` kosong; version 2 sama
+ * bentuknya, hanya `Answer` kini boleh punya `source`/`reason` (saran AI per tahap).
  */
 export function parseState(raw: unknown): ProjectState | null {
   if (typeof raw !== "object" || raw === null) return null;
   const o = raw as Record<string, unknown>;
-  if (o.version !== 1 && o.version !== 2) return null;
+  if (o.version !== 1 && o.version !== 2 && o.version !== 3) return null;
   if (typeof o.projectName !== "string" || typeof o.idea !== "string") return null;
   const clarifications = o.version === 1 ? [] : parseClarifications(o.clarifications);
   if (!clarifications) return null;
@@ -31,7 +34,7 @@ export function parseState(raw: unknown): ProjectState | null {
     if (!isAnswer(v)) return null;
     answers[k] = v;
   }
-  return { version: 2, projectName: o.projectName, idea: o.idea, answers, clarifications };
+  return { version: 3, projectName: o.projectName, idea: o.idea, answers, clarifications };
 }
 
 export function loadState(): ProjectState | null {

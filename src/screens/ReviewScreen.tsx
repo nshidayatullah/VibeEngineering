@@ -93,7 +93,13 @@ export function ReviewScreen({ state, onEditStage, onEditClarifications, onGener
                       {value || <span className="text-muted">tidak ada</span>}{" "}
                       {r.decidedBy === "ai" && (
                         <Badge tone="warn">
-                          {r.auto ? "otomatis" : r.skipped ? "dilewati" : "rekomendasi"}
+                          {r.auto
+                            ? "otomatis"
+                            : r.skipped
+                              ? "dilewati"
+                              : r.source === "model"
+                                ? "saran AI"
+                                : "rekomendasi"}
                         </Badge>
                       )}
                     </dd>

@@ -150,6 +150,23 @@ Rancangan: [AI-9ROUTER.md](AI-9ROUTER.md), ARCHITECTURE ADR-007, PRD F-11.
   - [x] Suhu bisa diatur (bawaan 0.2) dan `response_format` opsional lewat env
   - [x] `/api/ai/health` tidak terkena `limit_req` nginx
 
+### T-020 · Saran AI per tahap (F-12)
+- Status: [x]
+- Bergantung pada: T-019
+- Rujukan: AI-9ROUTER.md §5, ADR-008
+- Selesai jika:
+  - [x] `POST /api/ai/suggest` memvalidasi permintaan dan jawaban model (tes `server/suggest.test.ts`)
+  - [x] AC-12-1 s/d AC-12-6 (tes `src/engine/suggest.test.ts`, `persist.test.ts`, uji browser 375px & 1280px)
+  - [x] `ProjectState` version 3; data version 1 dan 2 dinaikkan oleh `parseState`
+
+### T-021 · Deploy saran AI
+- Status: [ ]
+- Bergantung pada: T-020
+- Rujukan: DEPLOY.md §7
+- Selesai jika:
+  - [ ] `deploy.sh` dijalankan; nginx: `rate=12r/m`, `burst=10`, `client_max_body_size 32k`
+  - [ ] `POST /api/ai/suggest` dari produksi → 200; tombol **Isi dengan saran AI** dicoba di dua tahap tanpa error CSP
+
 ## Log Pekerjaan
 | Tanggal | Tugas | Catatan |
 |---|---|---|
@@ -158,3 +175,4 @@ Rancangan: [AI-9ROUTER.md](AI-9ROUTER.md), ARCHITECTURE ADR-007, PRD F-11.
 | 2026-10-26 | T-016, T-017 | Klarifikasi awal AI lewat 9router: service `vibeplan-ai`, layar klarifikasi, state version 2. 116 tes lulus. |
 | 2026-10-26 | T-018 | Service AI terpasang di VPS oleh Hermes: health 200, clarify 200 (8–11 detik), UI produksi menampilkan 5 pertanyaan tanpa error CSP. |
 | 2026-10-26 | T-019 | Toleran koma di akhir JSON model, suhu & JSON mode lewat env, health tanpa rate limit nginx. |
+| 2026-10-26 | T-020 | Saran AI per tahap: endpoint `/api/ai/suggest`, tombol per tahap, saran tersimpan sebagai `[ASUMSI]` bersumber model. |
