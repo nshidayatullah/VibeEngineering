@@ -1,82 +1,62 @@
-# Rancangan: Wawancara interaktif dengan 9router (v1)
+# Rancangan: Klarifikasi awal dengan AI lewat 9router (v1)
 
-> Status: **DRAF, menunggu persetujuan**. Belum ada kode yang diubah. Setelah disetujui, ringkasannya masuk ke ARCHITECTURE.md §6 & §10 (ADR-007), PRD §4–§6, dan TASKS.md (T-016…T-021).
+> Status: **Disetujui 2026-10-26** (ADR-007). Pengguna memilih: proxy kecil di VPS, dan AI hanya untuk klarifikasi di awal.
 
 ## 1. Tujuan
-Wawancara saat ini memakai pertanyaan tetap dan rekomendasi dari aturan statis, sehingga belum "mengenal" proyek pengguna. Dengan 9router (router LLM OpenAI-compatible yang sudah berjalan di VPS yang sama), VibePlan akan:
+Wawancara memakai pertanyaan tetap, sehingga belum "mengenal" proyek pengguna. Sebelum wawancara dimulai, AI membaca nama dan ide proyek lalu mengajukan **3–5 pertanyaan pilihan ganda** yang khusus untuk proyek itu (masalah inti, situasi pemakaian, aturan bisnis, pembeda). Jawabannya masuk ke PRD hasil, lalu wizard 8 tahap berjalan seperti biasa.
 
-1. **Klarifikasi awal:** setelah nama & ide diisi, AI mengajukan 2–4 pertanyaan pilihan ganda yang khusus untuk proyek itu.
-2. **Pertanyaan lanjutan per tahap:** di akhir tiap tahap, AI boleh mengajukan 0–3 pertanyaan pilihan ganda tambahan berdasarkan jawaban sejauh ini.
-3. **Rekomendasi kontekstual:** tombol **🤖 Biarkan AI merekomendasikan** memakai model; alasannya merujuk ide proyek. Pilihan tetap dibatasi ke opsi yang ada.
-
-Prinsip yang tidak berubah: tetap pilihan ganda, generator tetap deterministik, dan **semua alur tetap jalan tanpa AI** (aturan statis jadi cadangan).
+Yang tidak berubah: wizard tetap pilihan ganda, rekomendasi per pertanyaan tetap aturan statis, generator tetap deterministik, dan **semua alur tetap jalan tanpa AI**.
 
 ## 2. Arsitektur
 ```
 Browser (SPA statis)
-  │  POST /api/ai/*   (origin sama → CSP connect-src 'self' TIDAK perlu diubah)
+  │  GET /api/ai/health, POST /api/ai/clarify   (origin sama → CSP connect-src 'self' tetap)
   ▼
 nginx  vibeplan.emha.web.id
-  │  location /api/ai/  → limit_req, client_max_body_size 16k
+  │  location /api/ai/ → limit_req 6/menit/IP, body ≤ 8 KB
   ▼
-vibeplan-ai  (Node 26, tanpa dependensi, systemd, 127.0.0.1:8787)
-  │  menyusun prompt sendiri, validasi input & output, rate limit, timeout
+vibeplan-ai  (server/main.ts, Node ≥ 22.18 tanpa dependensi, systemd, 127.0.0.1:8787)
+  │  validasi masukan, menyusun prompt sendiri, validasi jawaban model, rate limit, timeout
   │  Authorization: Bearer <VIBEPLAN_AI_KEY dari /etc/vibeplan-ai.env>
   ▼
-9router  (127.0.0.1:<port>/v1/chat/completions, atau https://9router.emha.web.id/v1)
+9router  (VIBEPLAN_AI_UPSTREAM, misal http://127.0.0.1:20128/v1/chat/completions)
 ```
 
-### Kenapa proxy kecil, bukan nginx langsung ke 9router
+Alasan memilih proxy kecil (bukan nginx langsung ke 9router atau key di browser):
 - API key 9router tidak pernah sampai ke browser.
-- Service **tidak** meneruskan prompt dari klien. Klien hanya mengirim data terstruktur (nama, ide, jawaban); prompt disusun di server. Jadi situs publik tidak berubah jadi relay LLM gratis.
+- Service **tidak** meneruskan prompt dari klien. Klien hanya mengirim nama dan ide; prompt disusun di server. Situs publik tidak bisa dipakai sebagai relay LLM umum.
 - Model, `max_tokens`, dan suhu dikunci di server lewat env.
-- Karena satu origin, CSP tetap `connect-src 'self'`.
 
-## 3. Kontrak API (`vibeplan-ai`)
-Semua respons JSON. Kesalahan: `{ "error": "<kode>" }` dengan status 400/429/502/504.
-
+## 3. Kontrak API
 | Endpoint | Masukan | Keluaran |
 |---|---|---|
-| `GET /api/ai/health` | - | `{ "ok": true, "model": "<nama>" }` |
-| `POST /api/ai/clarify` | `{ projectName, idea, stage, answered: [{ q, a }] }` | `{ questions: [{ id, text, type: "single"\|"multi", options: [{ id, label }] }] }` (maks 4 pertanyaan, 2–6 opsi) |
-| `POST /api/ai/recommend` | `{ projectName, idea, question: { id, text, type, options: [{ id, label }] }, answered: [{ q, a }] }` | `{ optionIds: [...], reason }` (opsi wajib berasal dari `options`) |
+| `GET /api/ai/health` | - | `{ "ok": true }` |
+| `POST /api/ai/clarify` | `{ projectName, idea }` (nama 1–80, ide 10–2000 karakter) | `{ questions: [{ id: "K-01", text, type: "single"\|"multi", options: [{ id: "K-01-a", label }] }] }` (3–5 pertanyaan, 2–6 opsi) |
 
-Batas masukan: `projectName` ≤ 80 karakter, `idea` ≤ 2000, `answered` ≤ 80 butir, total body ≤ 16 KB.
+Kode error: `400 bad_request/bad_name/bad_idea`, `415`, `429 rate_limited`, `502 upstream/bad_model`, `504 timeout`.
 
-Pengamanan di service:
-- Output model diparse sebagai JSON dan divalidasi; jika tidak valid, satu kali coba ulang, lalu `502`.
-- Rate limit per IP di memori (misal 30 permintaan/menit, 300/hari) + `limit_req` nginx.
-- Timeout ke 9router 30 detik → `504`.
-- Log hanya status, durasi, dan endpoint; isi ide tidak dicatat.
+Pengamanan di service (`server/clarify.ts`):
+- Data pengguna dikirim ke model sebagai JSON di pesan `user`, dengan instruksi bahwa isinya data, bukan perintah.
+- Jawaban model diparse, opsi duplikat/kosong dibuang, ID diberikan server. Jika tidak valid, coba ulang satu kali.
+- Rate limit per IP di memori (bawaan 5/menit, 50/hari) di samping `limit_req` nginx.
+- Log hanya path, status, dan durasi; isi ide tidak dicatat.
 
-## 4. Perubahan di klien
-| Bagian | Perubahan |
+## 4. Klien
+| Bagian | File |
 |---|---|
-| `src/ai/client.ts` (baru) | `fetch` ke `/api/ai/*` dengan `AbortController` (timeout 25 detik), parse & validasi respons |
-| Deteksi | Saat mulai, `GET /api/ai/health`. Jika gagal (lokal tanpa service, offline), semua tombol AI disembunyikan dan aplikasi berperilaku seperti sekarang |
-| Toggle | Di layar mulai: **Gunakan AI untuk wawancara** (aktif jika tersedia) + catatan bahwa ide & jawaban dikirim ke server VibePlan dan penyedia LLM |
-| State | `ProjectState` mendapat field opsional `clarifications: [{ id, stage, text, type, options, optionIds }]` dan `Answer.ai?: { optionIds, reason, basedOn }`. `version` tetap 1; `parseState` menerima state lama |
-| Rekomendasi | Hasil AI disimpan beserta `basedOn` (hash jawaban sebelumnya). Jika jawaban awal berubah, rekomendasi AI dianggap basi: resolver memakai aturan statis dan UI menawarkan **Perbarui rekomendasi AI** (ADR-004 tetap berlaku untuk aturan statis) |
-| Generator | PRD mendapat bagian konteks dari klarifikasi; alasan AI ikut di `[ASUMSI]`. Generator hanya membaca state, tidak memanggil AI, jadi AC-05-1 (deterministik) tetap terpenuhi |
+| Cek ketersediaan & panggilan API | `src/ai/client.ts` |
+| Validasi & ubah state klarifikasi (fungsi murni) | `src/engine/clarify.ts` |
+| Layar klarifikasi | `src/screens/ClarifyScreen.tsx` |
+| Pilihan **🤖 Klarifikasi ide dengan AI** (hanya muncul jika service tersedia) | `src/screens/StartScreen.tsx` |
+| Ringkasan klarifikasi + **Ubah** | `src/screens/ReviewScreen.tsx` |
+| PRD hasil §1 → `### Klarifikasi awal` (yang dilewati tidak ditulis) | `src/generator/prd.ts` |
 
-## 5. Perubahan dokumen yang diusulkan
-- **ADR-007** (ARCHITECTURE §10): "Fitur AI lewat service `vibeplan-ai` di VPS yang memanggil 9router; prompt disusun di server, key di env, origin sama." Ditolak: nginx langsung ke 9router (relay terbuka), key di browser (hanya pemilik key yang bisa pakai).
-- **ARCHITECTURE §6** Integrasi eksternal: 9router.
-- **PRD §5**: "Tidak ada data yang keluar dari browser" menjadi "Tanpa AI, tidak ada data keluar dari browser. Dengan AI aktif, nama, ide, dan jawaban dikirim ke server VibePlan dan penyedia LLM; tidak disimpan di server". Offline: semua alur tetap jalan tanpa AI.
-- **PRD §6**: hapus "LLM apa pun" dari Di Luar Lingkup; tambah fitur F-11 (klarifikasi), F-12 (pertanyaan lanjutan), F-13 (rekomendasi AI) dengan AC EARS.
-- **DEPLOY.md**: bagian baru untuk `vibeplan-ai` (unit systemd, env, blok nginx).
+`ProjectState` naik ke **version 2** dengan field `clarifications`. `parseState` menaikkan data version 1 (localStorage lama dan `vibeplan-answers.json` lama) dengan `clarifications: []`.
 
-## 6. Rencana tugas
-| ID | Tugas | Selesai jika |
-|---|---|---|
-| T-016 | Service `server/vibeplan-ai.mjs` + tes validasi | Tes Vitest untuk validasi input/output & rate limit lulus; tanpa dependensi npm |
-| T-017 | Konfigurasi deploy | `deploy/vibeplan-ai.service`, `deploy/vibeplan-ai.env.example`, blok `location /api/ai/` di nginx, DEPLOY.md diperbarui |
-| T-018 | Klien AI + deteksi + toggle | Tanpa service, UI identik dengan sekarang (tes); dengan mock, tombol AI muncul |
-| T-019 | Klarifikasi awal & pertanyaan lanjutan (F-11, F-12) | Jawaban klarifikasi tersimpan, ikut di PRD hasil |
-| T-020 | Rekomendasi AI (F-13) | Opsi di luar daftar ditolak; rekomendasi basi terdeteksi; fallback ke aturan statis |
-| T-021 | Deploy & uji di produksi | Hermes memasang service; alur dengan AI diuji di https://vibeplan.emha.web.id |
-
-## 7. Yang perlu dipastikan di VPS
-- Port lokal 9router dan apakah endpoint `/v1/chat/completions` membutuhkan API key.
-- Nama model (atau combo) di 9router yang dipakai untuk VibePlan.
-- Port 8787 bebas.
+## 5. Menjalankan di lokal
+```bash
+cp deploy/vibeplan-ai.env.example .env.ai   # isi VIBEPLAN_AI_UPSTREAM, VIBEPLAN_AI_KEY, VIBEPLAN_AI_MODEL
+pnpm ai:dev                                 # service di 127.0.0.1:8787
+pnpm dev                                    # Vite meneruskan /api/ai ke service
+```
+Tanpa `pnpm ai:dev`, aplikasi berjalan seperti sebelumnya dan pilihan AI tidak muncul.

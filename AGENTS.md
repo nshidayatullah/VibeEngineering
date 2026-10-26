@@ -3,7 +3,7 @@
 Instruksi untuk AI coding agent yang bekerja di repo **VibePlan**. Baca file ini setiap awal sesi.
 
 ## Konteks Proyek
-VibePlan adalah SPA statis (React + Vite, tanpa backend dan tanpa LLM) yang mewawancarai pengguna dengan pertanyaan pilihan ganda lalu menghasilkan paket `.md` (PRD, ARCHITECTURE, TECH_STACK, DATA_MODEL, DESIGN, TASKS, AGENTS, CLAUDE) dan mengekspornya sebagai ZIP.
+VibePlan adalah SPA statis (React + Vite) dengan satu service kecil opsional `server/` untuk klarifikasi awal lewat LLM 9router (ADR-007), yang mewawancarai pengguna dengan pertanyaan pilihan ganda lalu menghasilkan paket `.md` (PRD, ARCHITECTURE, TECH_STACK, DATA_MODEL, DESIGN, TASKS, AGENTS, CLAUDE) dan mengekspornya sebagai ZIP.
 
 Dokumen rujukan (baca sesuai kebutuhan, jangan menebak):
 - `docs/vibeplan/PRD.md`: fitur, kriteria penerimaan, di luar lingkup
@@ -12,6 +12,7 @@ Dokumen rujukan (baca sesuai kebutuhan, jangan menebak):
 - `docs/vibeplan/DESIGN.md`: token, komponen, layar
 - `docs/vibeplan/TASKS.md`: tugas yang sedang dikerjakan
 - `docs/vibeplan/DEPLOY.md`: cara rilis ke produksi (VPS + nginx)
+- `docs/vibeplan/AI-9ROUTER.md`: rancangan klarifikasi AI dan service `vibeplan-ai`
 - `docs/research/`: riset konsep dan bank pertanyaan asli
 - `templates/`: struktur acuan file hasil
 
@@ -22,6 +23,7 @@ pnpm lint       # lint (Biome)
 pnpm typecheck  # cek tipe
 pnpm test       # tes (Vitest)
 pnpm build      # build ke dist/
+pnpm ai:dev     # service klarifikasi AI lokal (butuh .env.ai, lihat AI-9ROUTER.md §5)
 ```
 
 ## Alur Kerja
@@ -46,11 +48,12 @@ pnpm build      # build ke dist/
 - Pesan commit: `T-012: <ringkasan>`
 
 ## Batasan (WAJIB)
-- JANGAN mengerjakan apa pun yang tercantum di PRD.md §6 "Di Luar Lingkup" (terutama LLM dan backend).
+- JANGAN mengerjakan apa pun yang tercantum di PRD.md §6 "Di Luar Lingkup" (terutama LLM selain F-11 dan backend selain `vibeplan-ai`).
 - JANGAN menambah/mengganti dependensi tanpa izin (lihat TECH_STACK.md §2–3).
 - JANGAN mengubah bentuk `ProjectState` tanpa izin; jika disetujui, naikkan `version` dan tangani data lama di `parseState`.
 - JANGAN menghapus atau melemahkan tes agar lulus.
-- JANGAN mengirim data pengguna ke jaringan.
+- JANGAN mengirim data pengguna ke jaringan, kecuali nama & ide ke `/api/ai/clarify` saat pengguna memilih klarifikasi AI.
+- JANGAN menaruh API key atau prompt LLM di kode klien; keduanya hanya di `server/`.
 - JANGAN memakai `dangerouslySetInnerHTML`.
 
 ## Definisi Selesai

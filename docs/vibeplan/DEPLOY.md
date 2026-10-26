@@ -62,3 +62,34 @@ pnpm install --frozen-lockfile && pnpm build
 sudo rsync -a --delete dist/ /var/www/vibeplan/
 git checkout main
 ```
+
+## 7. Service klarifikasi AI (`vibeplan-ai`, sekali)
+Fitur klarifikasi AI (PRD F-11) butuh service kecil yang memanggil 9router. Tanpa langkah ini situs tetap jalan, hanya pilihan AI yang tidak muncul.
+
+1. Pastikan Node ≥ 22.18 (`node -v`) dan catat path-nya (`command -v node`). Jika bukan `/usr/bin/node`, ubah `ExecStart` di `deploy/vibeplan-ai.service`.
+2. Isi konfigurasi (key hanya ada di file ini, mode 600):
+   ```bash
+   sudo install -m 600 -o root -g root deploy/vibeplan-ai.env.example /etc/vibeplan-ai.env
+   sudo nano /etc/vibeplan-ai.env   # isi VIBEPLAN_AI_UPSTREAM, VIBEPLAN_AI_KEY, VIBEPLAN_AI_MODEL
+   ```
+3. Salin kode dan pasang unit systemd:
+   ```bash
+   sudo mkdir -p /opt/vibeplan-ai
+   sudo rsync -a --delete --exclude '*.test.ts' server/ /opt/vibeplan-ai/
+   sudo cp deploy/vibeplan-ai.service /etc/systemd/system/
+   sudo systemctl daemon-reload && sudo systemctl enable --now vibeplan-ai
+   curl -s http://127.0.0.1:8787/api/ai/health          # {"ok":true}
+   ```
+4. Tambahkan ke nginx. Certbot sudah mengubah `/etc/nginx/sites-available/vibeplan`, jadi **jangan menimpa file itu**; sisipkan saja:
+   - baris `limit_req_zone ... zone=vibeplan_ai ...` di paling atas file (di luar blok `server`);
+   - blok `location /api/ai/ { ... }` di dalam blok `server` yang `listen 443`.
+   Salin keduanya dari `deploy/nginx-vibeplan.conf`, lalu `sudo nginx -t && sudo systemctl reload nginx`.
+5. Uji:
+   ```bash
+   curl -s https://vibeplan.emha.web.id/api/ai/health
+   curl -s -X POST https://vibeplan.emha.web.id/api/ai/clarify -H 'Content-Type: application/json' \
+     -d '{"projectName":"Servis AC","idea":"Aplikasi pemesanan servis AC untuk teknisi freelance di Bandung."}'
+   journalctl -u vibeplan-ai -n 20 --no-pager
+   ```
+
+Rilis berikutnya: `./deploy/deploy.sh` ikut menyalin `server/` dan me-restart `vibeplan-ai` jika unitnya terpasang.

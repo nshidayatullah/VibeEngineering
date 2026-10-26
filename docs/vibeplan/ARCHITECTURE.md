@@ -11,9 +11,11 @@ Browser
        ├─ data/         bank pertanyaan, katalog fitur & entitas, tabel stack
        ├─ generator/    ProjectState → Plan → 8+ file .md + validasi
        ├─ export/       JSZip (lazy) → unduhan
-       └─ storage/      localStorage "vibeplan:v1"
+       ├─ storage/      localStorage "vibeplan:v1"
+       └─ ai/           fetch ke /api/ai/* (klarifikasi awal, opsional)
+                          │ nginx → vibeplan-ai (server/, Node, systemd) → 9router
 ```
-Tidak ada server, API, atau database. Tidak ada permintaan jaringan setelah halaman dimuat.
+Tidak ada database. Satu-satunya API adalah service kecil `vibeplan-ai` untuk klarifikasi awal (ADR-007, [AI-9ROUTER.md](AI-9ROUTER.md)). Tanpa service itu, tidak ada permintaan jaringan setelah halaman dimuat.
 
 ## 2. Komponen
 | Komponen | Tanggung jawab | File |
@@ -35,15 +37,17 @@ src/
   generator/     # Plan → markdown; satu file per dokumen
   export/        # ZIP & unduhan
   storage/       # localStorage + parseState
+  ai/            # fetch ke /api/ai/* (klarifikasi awal)
   components/    # komponen UI kecil
   screens/       # satu komponen per layar
   test/          # fixture tes
   App.tsx, main.tsx, index.css
+server/          # service vibeplan-ai (Node, tanpa dependensi): clarify.ts murni + main.ts HTTP
 templates/       # struktur acuan file hasil (dicek oleh tes)
 docs/research/   # riset & bank pertanyaan versi dokumen
 docs/vibeplan/   # spesifikasi VibePlan sendiri
 ```
-**Aturan dependensi:** `screens/components → engine/generator/export/storage → data`. `data/` hanya boleh mengimpor tipe dari `engine/types.ts`. `engine/` dan `generator/` tidak boleh mengimpor React atau API browser (selain `export/` dan `storage/`).
+**Aturan dependensi:** `screens/components → engine/generator/export/storage → data`. `data/` hanya boleh mengimpor tipe dari `engine/types.ts`. `engine/` dan `generator/` tidak boleh mengimpor React atau API browser (selain `export/`, `storage/`, dan `ai/`). `server/` berdiri sendiri: tidak mengimpor dari `src/` dan sebaliknya.
 
 ## 4. Alur Data Utama
 1. Setiap aksi pengguna memanggil fungsi murni di `engine/answers.ts` yang mengembalikan `ProjectState` baru (immutable).
@@ -62,7 +66,11 @@ docs/vibeplan/   # spesifikasi VibePlan sendiri
 - Multi-tenant: tidak ada
 
 ## 6. Integrasi Eksternal
-Tidak ada. Menambah integrasi (misal LLM di v1) butuh baris ADR baru.
+| Layanan | Untuk apa | Lewat |
+|---|---|---|
+| 9router (router LLM OpenAI-compatible di VPS yang sama) | Pertanyaan klarifikasi awal (F-11) | `server/main.ts` → `VIBEPLAN_AI_UPSTREAM/chat/completions`. Klien hanya memanggil `/api/ai/*` |
+
+Menambah integrasi lain butuh baris ADR baru.
 
 ## 7. Rendering, Real-time, Offline
 - Strategi rendering: SPA di klien; `index.html` memuat judul dan meta description
@@ -72,7 +80,8 @@ Tidak ada. Menambah integrasi (misal LLM di v1) butuh baris ADR baru.
 ## 8. Keamanan
 - Tidak ada `dangerouslySetInnerHTML`; pratinjau markdown ditampilkan sebagai teks di `<pre>`.
 - File impor divalidasi `parseState()` sebelum dipakai; data tidak valid ditolak tanpa mengubah state.
-- Tidak ada rahasia di repo.
+- Tidak ada rahasia di repo. API key 9router hanya di `/etc/vibeplan-ai.env` di VPS.
+- Service AI tidak meneruskan prompt dari klien: menerima nama & ide, menyusun prompt sendiri, memvalidasi jawaban model, rate limit per IP, log tanpa isi ide.
 
 ## 9. Lingkungan & Deploy
 | Lingkungan | URL | Branch | Database |
@@ -89,3 +98,4 @@ Tidak ada. Menambah integrasi (misal LLM di v1) butuh baris ADR baru.
 | ADR-004 | 2026-10-25 | Rekomendasi dihitung ulang dari jawaban terbaru, tidak disimpan | Mencegah rekomendasi basi saat jawaban awal diubah | Menyimpan hasil rekomendasi di state |
 | ADR-005 | 2026-10-25 | Relasi entitas diambil dari katalog (FK di field), bukan pertanyaan DAT-02 | DAT-02 butuh usulan pasangan entitas oleh LLM | Matriks relasi manual |
 | ADR-006 | 2026-10-26 | Produksi di VPS sendiri: nginx melayani `dist/` statis dengan CSP ketat, tanpa proses Node | VPS sudah ada dan memakai nginx; situs statis tidak butuh proses yang berjalan | Next.js/Node + systemd di port sendiri (butuh server), Vercel/Netlify/GitHub Pages (pengguna memilih VPS) |
+| ADR-007 | 2026-10-26 | Klarifikasi awal AI lewat service kecil `vibeplan-ai` (Node tanpa dependensi, systemd, 127.0.0.1:8787) di belakang nginx `/api/ai/`, yang memanggil 9router; prompt disusun di server, key di env, origin sama sehingga CSP tetap `connect-src 'self'` | Key tidak bocor, situs tidak jadi relay LLM terbuka, tetap tanpa build server | nginx langsung ke 9router (siapa pun bisa memakai kuota LLM untuk prompt apa pun), key diisi pengguna di browser (hanya pemilik key yang bisa memakai) |

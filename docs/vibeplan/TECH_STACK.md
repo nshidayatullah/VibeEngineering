@@ -9,7 +9,7 @@
 | Bahasa | TypeScript (strict, `noUncheckedIndexedAccess`) | 7.0.2 | Tipe ketat; generator banyak memetakan data |
 | Framework | React (SPA, tanpa router) | 19.3.1 | Alur 4 layar cukup dengan state, tidak perlu router |
 | Build | Vite | 8.3.5 | Build statis cepat, output bisa dihosting di mana saja |
-| Backend | Tidak ada | - | Semua berjalan di browser; tidak ada data yang dikirim |
+| Backend | Service `vibeplan-ai` (`server/`), Node ≥ 22.18 menjalankan `.ts` langsung, tanpa dependensi npm | - | Hanya untuk klarifikasi AI lewat 9router (ADR-007) |
 | Database | Tidak ada (`localStorage`, kunci `vibeplan:v1`) | - | Hanya progres satu pengguna di satu browser |
 | ORM | Tidak ada | - | - |
 | Auth | Tidak ada | - | Tanpa akun |
@@ -37,7 +37,7 @@
 | State global (Redux, Zustand, Jotai) | State kecil dan immutable | `useState` + fungsi murni di `src/engine/answers.ts` |
 | Pustaka UI (MUI, shadcn, Mantine) | Menambah ukuran bundle | `src/components/ui.tsx` |
 | Template engine (Handlebars, Mustache) | Generator harus bertipe dan bisa diuji | fungsi TypeScript di `src/generator/` |
-| SDK LLM apa pun | Di luar lingkup MVP (PRD §6) | aturan `recommend` statis |
+| SDK LLM apa pun | 9router sudah OpenAI-compatible; cukup `fetch` di `server/clarify.ts` | `fetch` bawaan Node |
 | ESLint/Prettier | Sudah memakai Biome | Biome |
 
 ## 4. Setup Lokal
@@ -60,4 +60,14 @@ pnpm dev        # http://localhost:5173
 | Migrasi DB | Tidak ada |
 
 ## 6. Variabel Lingkungan
-Tidak ada. VibePlan tidak memakai rahasia atau layanan eksternal.
+Aplikasi klien tidak memakai env. Service `vibeplan-ai` membaca env berikut (contoh: `deploy/vibeplan-ai.env.example`; di VPS: `/etc/vibeplan-ai.env`; di lokal: `.env.ai`, diabaikan git):
+
+| Nama | Wajib | Bawaan | Isi |
+|---|---|---|---|
+| `VIBEPLAN_AI_UPSTREAM` | - | `http://127.0.0.1:20128/v1` | Basis URL 9router |
+| `VIBEPLAN_AI_KEY` | - | kosong | API key 9router (rahasia) |
+| `VIBEPLAN_AI_MODEL` | ya | - | Nama model/combo di 9router |
+| `VIBEPLAN_AI_PORT` / `VIBEPLAN_AI_HOST` | - | `8787` / `127.0.0.1` | Alamat service |
+| `VIBEPLAN_AI_MAX_TOKENS` | - | `1200` | Batas token jawaban |
+| `VIBEPLAN_AI_TIMEOUT_MS` | - | `40000` | Timeout per panggilan 9router |
+| `VIBEPLAN_AI_RATE_MINUTE` / `VIBEPLAN_AI_RATE_DAY` | - | `5` / `50` | Rate limit per IP |
