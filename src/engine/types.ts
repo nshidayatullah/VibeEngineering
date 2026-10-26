@@ -67,11 +67,24 @@ export interface Answer {
   priorities?: Record<string, Priority>;
 }
 
+/** Pertanyaan klarifikasi awal dari AI (9router) beserta jawabannya. */
+export interface Clarification {
+  /** K-01, K-02, ... diberikan server. */
+  id: string;
+  text: string;
+  type: "single" | "multi";
+  options: Option[];
+  /** Kosong berarti dilewati. */
+  optionIds: string[];
+}
+
 export interface ProjectState {
-  version: 1;
+  version: 2;
   projectName: string;
   idea: string;
   answers: Record<string, Answer>;
+  /** Kosong jika AI tidak dipakai. Ditambahkan di version 2. */
+  clarifications: Clarification[];
 }
 
 /** Jawaban yang sudah final: rekomendasi sudah dihitung, opsi tak valid sudah dibuang. */

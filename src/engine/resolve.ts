@@ -4,10 +4,11 @@ import type { Accessor, Option, Priority, ProjectState, Question, ResolvedAnswer
 export const OTHER = "other";
 
 export const emptyState = (): ProjectState => ({
-  version: 1,
+  version: 2,
   projectName: "",
   idea: "",
   answers: {},
+  clarifications: [],
 });
 
 const cache = new WeakMap<ProjectState, Accessor>();

@@ -1,3 +1,4 @@
+import { parseClarifications } from "../engine/clarify";
 import { emptyState } from "../engine/resolve";
 import type { Answer, ProjectState } from "../engine/types";
 
@@ -13,19 +14,24 @@ const isAnswer = (v: unknown): v is Answer => {
   );
 };
 
-/** Memvalidasi data dari localStorage atau file impor. Mengembalikan null jika tidak valid. */
+/**
+ * Memvalidasi data dari localStorage atau file impor. Mengembalikan null jika tidak valid.
+ * Version 1 (sebelum klarifikasi AI) dinaikkan ke version 2 dengan `clarifications` kosong.
+ */
 export function parseState(raw: unknown): ProjectState | null {
   if (typeof raw !== "object" || raw === null) return null;
   const o = raw as Record<string, unknown>;
-  if (o.version !== 1 || typeof o.projectName !== "string" || typeof o.idea !== "string")
-    return null;
+  if (o.version !== 1 && o.version !== 2) return null;
+  if (typeof o.projectName !== "string" || typeof o.idea !== "string") return null;
+  const clarifications = o.version === 1 ? [] : parseClarifications(o.clarifications);
+  if (!clarifications) return null;
   if (typeof o.answers !== "object" || o.answers === null) return null;
   const answers: Record<string, Answer> = {};
   for (const [k, v] of Object.entries(o.answers as Record<string, unknown>)) {
     if (!isAnswer(v)) return null;
     answers[k] = v;
   }
-  return { version: 1, projectName: o.projectName, idea: o.idea, answers };
+  return { version: 2, projectName: o.projectName, idea: o.idea, answers, clarifications };
 }
 
 export function loadState(): ProjectState | null {
