@@ -38,7 +38,7 @@ Kode error: `400 bad_request/bad_name/bad_idea`, `415`, `429 rate_limited`, `502
 
 Pengamanan di service (`server/clarify.ts`):
 - Data pengguna dikirim ke model sebagai JSON di pesan `user`, dengan instruksi bahwa isinya data, bukan perintah.
-- Jawaban model diparse (toleran terhadap blok kode, teks di sekitarnya, dan koma di akhir), opsi duplikat/kosong dibuang, ID diberikan server. Jika tidak valid, coba ulang satu kali. Suhu bawaan 0.2; `response_format` bisa diaktifkan lewat `VIBEPLAN_AI_JSON_MODE=1`.
+- Jawaban model diparse (toleran terhadap blok kode, teks di sekitarnya, dan koma di akhir), opsi duplikat/kosong dibuang, ID diberikan server. Jika tidak valid, coba ulang satu kali. Suhu bawaan 0.2; `response_format` bisa diaktifkan lewat `VIBEPLAN_AI_JSON_MODE=1`. Klarifikasi yang terdeteksi berbahasa Inggris (`looksEnglish`) dianggap tidak valid. Coba ulang dilewati jika percobaan pertama sudah memakan lebih dari setengah `VIBEPLAN_AI_TIMEOUT_MS` (bawaan 55 s).
 - Rate limit per IP di memori (bawaan 10/menit, 150/hari, gabungan `/clarify` + `/suggest`) di samping `limit_req` nginx.
 - Log hanya path, status, dan durasi; isi ide tidak dicatat.
 

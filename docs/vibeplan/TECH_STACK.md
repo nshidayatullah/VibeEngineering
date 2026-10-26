@@ -69,7 +69,7 @@ Aplikasi klien tidak memakai env. Service `vibeplan-ai` membaca env berikut (con
 | `VIBEPLAN_AI_MODEL` | ya | - | Nama model/combo di 9router |
 | `VIBEPLAN_AI_PORT` / `VIBEPLAN_AI_HOST` | - | `8787` / `127.0.0.1` | Alamat service |
 | `VIBEPLAN_AI_MAX_TOKENS` | - | `1200` | Batas token jawaban |
-| `VIBEPLAN_AI_TIMEOUT_MS` | - | `40000` | Timeout per panggilan 9router |
+| `VIBEPLAN_AI_TIMEOUT_MS` | - | `55000` | Timeout per panggilan 9router; coba ulang hanya jika percobaan pertama < setengahnya |
 | `VIBEPLAN_AI_RATE_MINUTE` / `VIBEPLAN_AI_RATE_DAY` | - | `10` / `150` | Rate limit per IP untuk `/clarify` + `/suggest` |
 | `VIBEPLAN_AI_TEMPERATURE` | - | `0.2` | Suhu model; rendah agar JSON lebih rapi |
 | `VIBEPLAN_AI_JSON_MODE` | - | `0` | `1` = kirim `response_format: json_object` (hanya jika model mendukung) |

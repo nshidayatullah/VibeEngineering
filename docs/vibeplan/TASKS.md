@@ -160,12 +160,20 @@ Rancangan: [AI-9ROUTER.md](AI-9ROUTER.md), ARCHITECTURE ADR-007, PRD F-11.
   - [x] `ProjectState` version 3; data version 1 dan 2 dinaikkan oleh `parseState`
 
 ### T-021 · Deploy saran AI
-- Status: [ ]
+- Status: [x]
 - Bergantung pada: T-020
 - Rujukan: DEPLOY.md §7
 - Selesai jika:
-  - [ ] `deploy.sh` dijalankan; nginx: `rate=12r/m`, `burst=10`, `client_max_body_size 32k`
-  - [ ] `POST /api/ai/suggest` dari produksi → 200; tombol **Isi dengan saran AI** dicoba di dua tahap tanpa error CSP
+  - [x] `deploy.sh` dijalankan; nginx: `rate=12r/m`, `burst=10`, `client_max_body_size 32k`
+  - [x] `POST /api/ai/suggest` dari produksi → 200; tombol **Isi dengan saran AI** dicoba di dua tahap tanpa error CSP
+
+### T-022 · Kualitas jawaban AI
+- Status: [x]
+- Bergantung pada: T-021
+- Selesai jika:
+  - [x] Prompt menegaskan Bahasa Indonesia di akhir + contoh; klarifikasi berbahasa Inggris ditolak dan dicoba ulang sekali (tes)
+  - [x] Alasan saran diminta satu kalimat lengkap 10–25 kata yang merujuk ide/klarifikasi
+  - [x] Timeout bawaan 55 s; coba ulang dilewati jika percobaan pertama > setengah timeout (tes)
 
 ## Log Pekerjaan
 | Tanggal | Tugas | Catatan |
@@ -176,3 +184,5 @@ Rancangan: [AI-9ROUTER.md](AI-9ROUTER.md), ARCHITECTURE ADR-007, PRD F-11.
 | 2026-10-26 | T-018 | Service AI terpasang di VPS oleh Hermes: health 200, clarify 200 (8–11 detik), UI produksi menampilkan 5 pertanyaan tanpa error CSP. |
 | 2026-10-26 | T-019 | Toleran koma di akhir JSON model, suhu & JSON mode lewat env, health tanpa rate limit nginx. |
 | 2026-10-26 | T-020 | Saran AI per tahap: endpoint `/api/ai/suggest`, tombol per tahap, saran tersimpan sebagai `[ASUMSI]` bersumber model. |
+| 2026-10-26 | T-021 | Saran AI live: suggest 3–5 detik, tahap 1 terisi 6/6, tahap 3 6/7, tanpa error CSP. Temuan: klarifikasi 33 detik dan berbahasa Inggris, alasan terlalu pendek. |
+| 2026-10-26 | T-022 | Prompt Bahasa Indonesia lebih tegas + deteksi jawaban Inggris, alasan satu kalimat, timeout 55 s dengan batas coba ulang. |
