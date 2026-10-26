@@ -7,6 +7,7 @@ import {
   parseClarifyRequest,
   parseModelQuestions,
   RateLimiter,
+  removeTrailingCommas,
 } from "./clarify.ts";
 
 const cfg: ModelConfig = {
@@ -15,6 +16,8 @@ const cfg: ModelConfig = {
   model: "vibeplan",
   maxTokens: 500,
   timeoutMs: 1000,
+  temperature: 0.2,
+  jsonMode: false,
 };
 
 const IDEA = "Aplikasi pemesanan servis AC untuk teknisi freelance di Bandung.";
@@ -92,6 +95,19 @@ describe("parseModelQuestions", () => {
   });
 });
 
+describe("JSON berisik dari model", () => {
+  it("menghapus koma di akhir objek/array tanpa menyentuh isi string", () => {
+    expect(removeTrailingCommas('{"a":["x, ]","y",],}')).toBe('{"a":["x, ]","y"]}');
+    expect(removeTrailingCommas('{"a":"kutip \\" ,}"  ,\n}')).toBe('{"a":"kutip \\" ,}"  \n}');
+  });
+
+  it("menerima jawaban model dengan koma di akhir", () => {
+    const noisy = `{"questions":[${THREE.map((x) => `{"text":${JSON.stringify(x.text)},"type":"${x.type}","options":[${x.options.map((o) => JSON.stringify(o)).join(",")},],}`).join(",")},]}`;
+    expect(() => JSON.parse(noisy)).toThrow();
+    expect(parseModelQuestions(noisy).ok).toBe(true);
+  });
+});
+
 describe("RateLimiter", () => {
   it("membatasi per menit dan per hari, per IP", () => {
     let t = 0;
@@ -124,6 +140,17 @@ describe("handleClarify", () => {
     const body = JSON.parse(String(calls[0]?.init.body));
     expect(body.model).toBe("vibeplan");
     expect(body.max_tokens).toBe(500);
+    expect(body.temperature).toBe(0.2);
+    expect(body.response_format).toBeUndefined();
+  });
+
+  it("mengirim response_format hanya jika jsonMode aktif", async () => {
+    let sent: Record<string, unknown> = {};
+    await handleClarify(ok, { ...cfg, jsonMode: true }, async (_url, init) => {
+      sent = JSON.parse(String(init.body));
+      return new Response(reply(THREE));
+    });
+    expect(sent.response_format).toEqual({ type: "json_object" });
   });
 
   it("menolak masukan tidak valid tanpa memanggil 9router", async () => {

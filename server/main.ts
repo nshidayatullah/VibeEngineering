@@ -15,6 +15,8 @@ const cfg: ModelConfig = {
   model: env("VIBEPLAN_AI_MODEL"),
   maxTokens: Number(env("VIBEPLAN_AI_MAX_TOKENS", "1200")),
   timeoutMs: Number(env("VIBEPLAN_AI_TIMEOUT_MS", "40000")),
+  temperature: Number(env("VIBEPLAN_AI_TEMPERATURE", "0.2")),
+  jsonMode: process.env.VIBEPLAN_AI_JSON_MODE === "1",
 };
 const host = env("VIBEPLAN_AI_HOST", "127.0.0.1");
 const port = Number(env("VIBEPLAN_AI_PORT", "8787"));
