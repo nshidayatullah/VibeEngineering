@@ -169,7 +169,13 @@ export function QuestionCard({ question: q, state, onChange }: Props) {
 
       {resolved.decidedBy === "ai" && q.type !== "priority" && (
         <p className="mt-3 rounded-lg bg-warn-bg px-3 py-2 text-sm text-warn">
-          <strong>{isAi ? "Rekomendasi:" : "Jika dilewati:"}</strong>{" "}
+          <strong>
+            {resolved.source === "model"
+              ? "🤖 Saran AI:"
+              : isAi
+                ? "Rekomendasi:"
+                : "Jika dilewati:"}
+          </strong>{" "}
           {answerLabels(a, q.id).join(", ") || "tidak ada"}
           {resolved.reason && <span className="block text-xs opacity-80">{resolved.reason}</span>}
         </p>

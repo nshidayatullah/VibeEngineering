@@ -68,7 +68,7 @@ docs/vibeplan/   # spesifikasi VibePlan sendiri
 ## 6. Integrasi Eksternal
 | Layanan | Untuk apa | Lewat |
 |---|---|---|
-| 9router (router LLM OpenAI-compatible di VPS yang sama) | Pertanyaan klarifikasi awal (F-11) | `server/main.ts` → `VIBEPLAN_AI_UPSTREAM/chat/completions`. Klien hanya memanggil `/api/ai/*` |
+| 9router (router LLM OpenAI-compatible di VPS yang sama) | Pertanyaan klarifikasi awal (F-11) dan saran per tahap (F-12) | `server/main.ts` → `VIBEPLAN_AI_UPSTREAM/chat/completions`. Klien hanya memanggil `/api/ai/*` |
 
 Menambah integrasi lain butuh baris ADR baru.
 
@@ -99,3 +99,4 @@ Menambah integrasi lain butuh baris ADR baru.
 | ADR-005 | 2026-10-25 | Relasi entitas diambil dari katalog (FK di field), bukan pertanyaan DAT-02 | DAT-02 butuh usulan pasangan entitas oleh LLM | Matriks relasi manual |
 | ADR-006 | 2026-10-26 | Produksi di VPS sendiri: nginx melayani `dist/` statis dengan CSP ketat, tanpa proses Node | VPS sudah ada dan memakai nginx; situs statis tidak butuh proses yang berjalan | Next.js/Node + systemd di port sendiri (butuh server), Vercel/Netlify/GitHub Pages (pengguna memilih VPS) |
 | ADR-007 | 2026-10-26 | Klarifikasi awal AI lewat service kecil `vibeplan-ai` (Node tanpa dependensi, systemd, 127.0.0.1:8787) di belakang nginx `/api/ai/`, yang memanggil 9router; prompt disusun di server, key di env, origin sama sehingga CSP tetap `connect-src 'self'` | Key tidak bocor, situs tidak jadi relay LLM terbuka, tetap tanpa build server | nginx langsung ke 9router (siapa pun bisa memakai kuota LLM untuk prompt apa pun), key diisi pengguna di browser (hanya pemilik key yang bisa memakai) |
+| ADR-008 | 2026-10-26 | Saran AI per tahap disimpan di `Answer` sebagai `decidedBy: "ai", source: "model"` + `reason` (`ProjectState` version 3); resolver memakainya selama opsinya valid, selain itu kembali ke `recommend()` statis. Klien mengirim opsi yang berlaku, server memvalidasi jawaban model terhadapnya | Satu jalur `[ASUMSI]` untuk semua rekomendasi; generator tetap deterministik karena hanya membaca state; katalog tetap di klien | Menerapkan saran sebagai jawaban pengguna (jejak asumsi hilang), katalog disalin ke server (dua sumber kebenaran) |

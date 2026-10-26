@@ -37,11 +37,11 @@ export const LIMITS = {
 
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string };
 
-const isRecord = (v: unknown): v is Record<string, unknown> =>
+export const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
 /** Membersihkan teks dari klien atau model: buang karakter kontrol, rapikan spasi. */
-const clean = (s: string): string =>
+export const clean = (s: string): string =>
   s
     // biome-ignore lint/suspicious/noControlCharactersInRegex: memang membuang karakter kontrol
     .replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, " ")
@@ -268,24 +268,24 @@ export interface HandlerResult {
   body: Record<string, unknown>;
 }
 
-const STATUS: Record<string, number> = {
+export const STATUS: Record<string, number> = {
   bad_request: 400,
   bad_name: 400,
   bad_idea: 400,
+  bad_questions: 400,
+  bad_context: 400,
   timeout: 504,
   upstream: 502,
   bad_model: 502,
 };
 
-/** Endpoint POST /api/ai/clarify. Jawaban model yang tidak valid dicoba ulang satu kali. */
-export async function handleClarify(
-  raw: unknown,
+/** Memanggil model lalu mem-parse jawabannya; jawaban yang tidak valid dicoba ulang satu kali. */
+export async function askModel<T>(
   cfg: ModelConfig,
+  messages: ChatMessage[],
   fetchFn: FetchFn,
-): Promise<HandlerResult> {
-  const req = parseClarifyRequest(raw);
-  if (!req.ok) return { status: STATUS[req.error] ?? 400, body: { error: req.error } };
-  const messages = buildMessages(req.value);
+  parse: (content: string) => Result<T>,
+): Promise<Result<T>> {
   let error = "bad_model";
   for (let attempt = 0; attempt < 2; attempt++) {
     const reply = await callModel(cfg, messages, fetchFn);
@@ -294,9 +294,23 @@ export async function handleClarify(
       if (error === "timeout") break;
       continue;
     }
-    const parsed = parseModelQuestions(reply.value);
-    if (parsed.ok) return { status: 200, body: { questions: parsed.value } };
+    const parsed = parse(reply.value);
+    if (parsed.ok) return parsed;
     error = parsed.error;
   }
-  return { status: STATUS[error] ?? 502, body: { error } };
+  return { ok: false, error };
+}
+
+/** Endpoint POST /api/ai/clarify. */
+export async function handleClarify(
+  raw: unknown,
+  cfg: ModelConfig,
+  fetchFn: FetchFn,
+): Promise<HandlerResult> {
+  const req = parseClarifyRequest(raw);
+  if (!req.ok) return { status: STATUS[req.error] ?? 400, body: { error: req.error } };
+  const result = await askModel(cfg, buildMessages(req.value), fetchFn, parseModelQuestions);
+  return result.ok
+    ? { status: 200, body: { questions: result.value } }
+    : { status: STATUS[result.error] ?? 502, body: { error: result.error } };
 }

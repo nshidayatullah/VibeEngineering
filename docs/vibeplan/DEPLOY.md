@@ -93,3 +93,6 @@ Fitur klarifikasi AI (PRD F-11) butuh service kecil yang memanggil 9router. Tanp
    ```
 
 Rilis berikutnya: `./deploy/deploy.sh` ikut menyalin `server/` dan me-restart `vibeplan-ai` jika unitnya terpasang.
+
+### Perubahan nginx untuk saran AI per tahap (PR T-020)
+Di config live, ubah tiga nilai agar cocok dengan `deploy/nginx-vibeplan.conf`: `rate=12r/m` di `limit_req_zone`, `burst=10` dan `client_max_body_size 32k` di `location /api/ai/`. Lalu `sudo nginx -t && sudo systemctl reload nginx`.

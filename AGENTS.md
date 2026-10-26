@@ -48,11 +48,11 @@ pnpm ai:dev     # service klarifikasi AI lokal (butuh .env.ai, lihat AI-9ROUTER.
 - Pesan commit: `T-012: <ringkasan>`
 
 ## Batasan (WAJIB)
-- JANGAN mengerjakan apa pun yang tercantum di PRD.md §6 "Di Luar Lingkup" (terutama LLM selain F-11 dan backend selain `vibeplan-ai`).
+- JANGAN mengerjakan apa pun yang tercantum di PRD.md §6 "Di Luar Lingkup" (terutama LLM selain F-11/F-12 dan backend selain `vibeplan-ai`).
 - JANGAN menambah/mengganti dependensi tanpa izin (lihat TECH_STACK.md §2–3).
 - JANGAN mengubah bentuk `ProjectState` tanpa izin; jika disetujui, naikkan `version` dan tangani data lama di `parseState`.
 - JANGAN menghapus atau melemahkan tes agar lulus.
-- JANGAN mengirim data pengguna ke jaringan, kecuali nama & ide ke `/api/ai/clarify` saat pengguna memilih klarifikasi AI.
+- JANGAN mengirim data pengguna ke jaringan, kecuali ke `/api/ai/clarify` dan `/api/ai/suggest` saat pengguna memakai fitur AI.
 - JANGAN menaruh API key atau prompt LLM di kode klien; keduanya hanya di `server/`.
 - JANGAN memakai `dangerouslySetInnerHTML`.
 

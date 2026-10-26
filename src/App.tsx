@@ -97,6 +97,7 @@ export function App() {
           <InterviewScreen
             state={state}
             stageIndex={Math.min(stageIndex, STAGES.length - 1)}
+            aiOn={aiOn}
             onChange={setState}
             onStage={setStageIndex}
             onBack={() => go("start")}
@@ -121,7 +122,7 @@ export function App() {
 
       <footer className="mx-auto max-w-6xl px-4 pb-8 text-xs text-muted">
         {aiOn
-          ? "Jawaban disimpan di browser ini. Nama dan ide proyek dikirim ke server VibePlan dan penyedia AI hanya saat klarifikasi, dan tidak disimpan di server."
+          ? "Jawaban disimpan di browser ini. Nama, ide, dan jawaban dikirim ke server VibePlan dan penyedia AI hanya saat Anda meminta klarifikasi atau saran AI, dan tidak disimpan di server."
           : "Jawaban hanya disimpan di browser ini. Tidak ada data yang dikirim ke server."}
       </footer>
     </div>

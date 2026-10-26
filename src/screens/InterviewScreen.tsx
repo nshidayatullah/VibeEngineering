@@ -1,3 +1,4 @@
+import { AiSuggest } from "../components/AiSuggest";
 import { QuestionCard } from "../components/QuestionCard";
 import { Button } from "../components/ui";
 import { QUESTIONS, STAGES } from "../data/questions";
@@ -7,13 +8,23 @@ import type { ProjectState } from "../engine/types";
 interface Props {
   state: ProjectState;
   stageIndex: number;
+  /** True jika service AI tersedia dan pengguna mengaktifkan AI. */
+  aiOn: boolean;
   onChange: (next: ProjectState) => void;
   onStage: (index: number) => void;
   onBack: () => void;
   onReview: () => void;
 }
 
-export function InterviewScreen({ state, stageIndex, onChange, onStage, onBack, onReview }: Props) {
+export function InterviewScreen({
+  state,
+  stageIndex,
+  aiOn,
+  onChange,
+  onStage,
+  onBack,
+  onReview,
+}: Props) {
   const a = accessor(state);
   const stage = STAGES[stageIndex] ?? STAGES[0];
   if (!stage) return null;
@@ -79,6 +90,8 @@ export function InterviewScreen({ state, stageIndex, onChange, onStage, onBack, 
             </p>
           )}
         </header>
+
+        {aiOn && <AiSuggest key={stage.id} state={state} stage={stage.id} onChange={onChange} />}
 
         {questions.map((q) => (
           <QuestionCard key={q.id} question={q} state={state} onChange={onChange} />
