@@ -92,16 +92,47 @@ export function buildMessages(req: ClarifyRequest): ChatMessage[] {
   ];
 }
 
-/** Mengambil objek JSON dari jawaban model (boleh dibungkus ```json atau diberi teks di sekitarnya). */
+/**
+ * Menghapus koma sebelum `}` atau `]` (di luar string). Beberapa model menulis JSON "berisik"
+ * seperti `["a","b",]` yang ditolak JSON.parse.
+ */
+export function removeTrailingCommas(json: string): string {
+  let out = "";
+  let inString = false;
+  for (let i = 0; i < json.length; i++) {
+    const ch = json.charAt(i);
+    if (inString) {
+      out += ch;
+      if (ch === "\\") {
+        out += json.charAt(i + 1);
+        i++;
+      } else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    if (ch === ",") {
+      const next = json.slice(i + 1).match(/^\s*([}\]])/);
+      if (next) continue;
+    }
+    out += ch;
+  }
+  return out;
+}
+
+/** Mengambil objek JSON dari jawaban model (boleh dibungkus ```json, diberi teks di sekitarnya, atau berkoma di akhir). */
 export function extractJson(content: string): unknown {
   const start = content.indexOf("{");
   const end = content.lastIndexOf("}");
   if (start === -1 || end <= start) return undefined;
-  try {
-    return JSON.parse(content.slice(start, end + 1));
-  } catch {
-    return undefined;
+  const raw = content.slice(start, end + 1);
+  for (const candidate of [raw, removeTrailingCommas(raw)]) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // coba kandidat berikutnya
+    }
   }
+  return undefined;
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -185,6 +216,9 @@ export interface ModelConfig {
   model: string;
   maxTokens: number;
   timeoutMs: number;
+  temperature: number;
+  /** Kirim response_format json_object; aktifkan hanya jika model di 9router mendukungnya. */
+  jsonMode: boolean;
 }
 
 export type FetchFn = (url: string, init: RequestInit) => Promise<Response>;
@@ -207,8 +241,9 @@ export async function callModel(
         model: cfg.model,
         messages,
         max_tokens: cfg.maxTokens,
-        temperature: 0.4,
+        temperature: cfg.temperature,
         stream: false,
+        ...(cfg.jsonMode ? { response_format: { type: "json_object" } } : {}),
       }),
       signal: AbortSignal.timeout(cfg.timeoutMs),
     });

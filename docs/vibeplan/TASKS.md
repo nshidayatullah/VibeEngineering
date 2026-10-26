@@ -134,13 +134,21 @@ Rancangan: [AI-9ROUTER.md](AI-9ROUTER.md), ARCHITECTURE ADR-007, PRD F-11.
   - [x] `ProjectState` version 2; data version 1 dinaikkan oleh `parseState` (tes `persist.test.ts`)
 
 ### T-018 · Deploy service AI
-- Status: [ ]
+- Status: [x]
 - Bergantung pada: T-017
 - Rujukan: DEPLOY.md §7
 - Selesai jika:
-  - [ ] `vibeplan-ai` berjalan di VPS (systemd), `/etc/vibeplan-ai.env` terisi, blok `location /api/ai/` aktif di nginx
-  - [ ] `curl https://vibeplan.emha.web.id/api/ai/health` → `{"ok":true}`
-  - [ ] Klarifikasi dicoba di produksi dengan satu ide nyata; tidak ada error CSP di Console
+  - [x] `vibeplan-ai` berjalan di VPS (systemd), `/etc/vibeplan-ai.env` terisi, blok `location /api/ai/` aktif di nginx
+  - [x] `curl https://vibeplan.emha.web.id/api/ai/health` → `{"ok":true}`
+  - [x] Klarifikasi dicoba di produksi dengan satu ide nyata; tidak ada error CSP di Console
+
+### T-019 · Ketahanan service AI
+- Status: [x]
+- Bergantung pada: T-018
+- Selesai jika:
+  - [x] Jawaban model berkoma di akhir tetap diterima (tes `server/clarify.test.ts`)
+  - [x] Suhu bisa diatur (bawaan 0.2) dan `response_format` opsional lewat env
+  - [x] `/api/ai/health` tidak terkena `limit_req` nginx
 
 ## Log Pekerjaan
 | Tanggal | Tugas | Catatan |
@@ -148,3 +156,5 @@ Rancangan: [AI-9ROUTER.md](AI-9ROUTER.md), ARCHITECTURE ADR-007, PRD F-11.
 | 2026-10-25 | T-001 s/d T-013 | MVP pertama: wizard statis, generator, ZIP, CI. 97 tes lulus. |
 | 2026-10-26 | T-014 | Produksi live di https://vibeplan.emha.web.id (nginx di VPS, sertifikat Let's Encrypt s/d 2027-01-23, auto-renew). Cek §5: `/` dan rute lain 200 dengan CSP, HTTP 301 ke HTTPS, aset immutable. Alur penuh sampai ZIP (10 file, 0 placeholder) dan reload localStorage lulus tanpa error console/CSP. Catatan: Node di VPS 26, bukan 22 sesuai `.nvmrc`. |
 | 2026-10-26 | T-016, T-017 | Klarifikasi awal AI lewat 9router: service `vibeplan-ai`, layar klarifikasi, state version 2. 116 tes lulus. |
+| 2026-10-26 | T-018 | Service AI terpasang di VPS oleh Hermes: health 200, clarify 200 (8–11 detik), UI produksi menampilkan 5 pertanyaan tanpa error CSP. |
+| 2026-10-26 | T-019 | Toleran koma di akhir JSON model, suhu & JSON mode lewat env, health tanpa rate limit nginx. |

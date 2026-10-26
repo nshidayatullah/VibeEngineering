@@ -82,7 +82,7 @@ Fitur klarifikasi AI (PRD F-11) butuh service kecil yang memanggil 9router. Tanp
    ```
 4. Tambahkan ke nginx. Certbot sudah mengubah `/etc/nginx/sites-available/vibeplan`, jadi **jangan menimpa file itu**; sisipkan saja:
    - baris `limit_req_zone ... zone=vibeplan_ai ...` di paling atas file (di luar blok `server`);
-   - blok `location /api/ai/ { ... }` di dalam blok `server` yang `listen 443`.
+   - blok `location = /api/ai/health { ... }` dan `location /api/ai/ { ... }` di dalam blok `server` yang `listen 443`.
    Salin keduanya dari `deploy/nginx-vibeplan.conf`, lalu `sudo nginx -t && sudo systemctl reload nginx`.
 5. Uji:
    ```bash

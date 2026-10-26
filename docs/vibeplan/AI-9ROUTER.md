@@ -13,7 +13,7 @@ Browser (SPA statis)
   │  GET /api/ai/health, POST /api/ai/clarify   (origin sama → CSP connect-src 'self' tetap)
   ▼
 nginx  vibeplan.emha.web.id
-  │  location /api/ai/ → limit_req 6/menit/IP, body ≤ 8 KB
+  │  location /api/ai/ → limit_req 6/menit/IP, body ≤ 8 KB (health tanpa limit)
   ▼
 vibeplan-ai  (server/main.ts, Node ≥ 22.18 tanpa dependensi, systemd, 127.0.0.1:8787)
   │  validasi masukan, menyusun prompt sendiri, validasi jawaban model, rate limit, timeout
@@ -37,7 +37,7 @@ Kode error: `400 bad_request/bad_name/bad_idea`, `415`, `429 rate_limited`, `502
 
 Pengamanan di service (`server/clarify.ts`):
 - Data pengguna dikirim ke model sebagai JSON di pesan `user`, dengan instruksi bahwa isinya data, bukan perintah.
-- Jawaban model diparse, opsi duplikat/kosong dibuang, ID diberikan server. Jika tidak valid, coba ulang satu kali.
+- Jawaban model diparse (toleran terhadap blok kode, teks di sekitarnya, dan koma di akhir), opsi duplikat/kosong dibuang, ID diberikan server. Jika tidak valid, coba ulang satu kali. Suhu bawaan 0.2; `response_format` bisa diaktifkan lewat `VIBEPLAN_AI_JSON_MODE=1`.
 - Rate limit per IP di memori (bawaan 5/menit, 50/hari) di samping `limit_req` nginx.
 - Log hanya path, status, dan durasi; isi ide tidak dicatat.
 
