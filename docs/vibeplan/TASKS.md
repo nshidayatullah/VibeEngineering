@@ -71,7 +71,7 @@
 - Status: [x]
 - Bergantung pada: T-008
 - Selesai jika:
-  - [x] AC-06-1 s/d AC-06-4 (diuji manual dengan Playwright: ZIP terunduh berisi 10 file)
+  - [x] AC-06-1 s/d AC-06-4 (diuji manual lewat skrip Playwright sekali jalan di luar repo: ZIP terunduh berisi 10 file; belum ada tes E2E permanen)
 
 ## Fase 2 · Fitur Should
 ### T-010 · Validasi sebelum ekspor (F-08)
@@ -100,11 +100,14 @@
   - [x] GitHub Actions menjalankan lint, typecheck, test, build pada setiap PR
 
 ### T-014 · Deploy
-- Status: [ ]
+- Status: [~]
 - Bergantung pada: T-013
+- Rujukan: DEPLOY.md, `deploy/`
 - Selesai jika:
-  - [ ] Hosting dipilih (PRD Q-02) dan `dist/` terdeploy
-  - [ ] Alur utama diuji manual di URL produksi
+  - [x] Hosting dipilih (PRD Q-02): VPS sendiri + nginx
+  - [x] Konfigurasi nginx dan `deploy/deploy.sh` ada di repo dan diuji lokal (200 untuk `/` dan rute lain, aset immutable, CSP tanpa error di browser, ZIP terunduh)
+  - [ ] `dist/` terdeploy di https://vibeplan.emha.web.id dengan HTTPS
+  - [ ] Alur utama diuji manual di URL produksi (DEPLOY.md §5)
 
 ### T-015 · Uji dengan pengguna nyata
 - Status: [ ]

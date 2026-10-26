@@ -149,4 +149,4 @@ Satu peran saja (pengguna anonim). Tidak ada login, tidak ada server, tidak ada 
 | ID | Pertanyaan / Asumsi | Status |
 |---|---|---|
 | Q-01 | Versi stack di TECH_STACK hasil hanya mengunci versi mayor; versi persis dicatat agen dari lockfile di T-001 | Asumsi |
-| Q-02 | Hosting VibePlan sendiri (GitHub Pages / Vercel / Netlify) belum dipilih; build-nya statis sehingga cocok untuk ketiganya | Terbuka |
+| Q-02 | Hosting VibePlan sendiri | Selesai: VPS sendiri + nginx di vibeplan.emha.web.id (ARCHITECTURE ADR-006) |
